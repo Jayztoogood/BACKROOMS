@@ -31,183 +31,292 @@ body {
 #hud {
     position: fixed;
     inset: 0;
+
     pointer-events: none;
+
     color: white;
-    text-shadow: 0 2px 4px #000;
+
+    text-shadow:
+        0 2px 4px #000;
+
     z-index: 10;
 }
 
 #healthBox {
     position: absolute;
+
     left: 20px;
+
     bottom: 25px;
+
     width: 230px;
 }
 
 .label {
     font-size: 12px;
+
     margin-bottom: 5px;
+
     letter-spacing: 2px;
 }
 
 .bar {
     height: 17px;
-    background: rgba(0,0,0,.65);
-    border: 1px solid rgba(255,255,255,.3);
+
+    background:
+        rgba(0,0,0,.65);
+
+    border:
+        1px solid
+        rgba(255,255,255,.3);
+
     margin-bottom: 10px;
 }
 
 .fill {
     height: 100%;
+
     width: 100%;
-    transition: width .15s;
+
+    transition:
+        width .15s;
 }
 
 #health {
-    background: #c93333;
+    background:
+        #c93333;
 }
 
 #stamina {
-    background: #d1c95c;
+    background:
+        #d1c95c;
 }
 
 #objective {
     position: absolute;
+
     top: 20px;
+
     left: 50%;
-    transform: translateX(-50%);
+
+    transform:
+        translateX(-50%);
+
     font-size: 15px;
+
     letter-spacing: 2px;
+
     text-align: center;
 }
 
 #playersHUD {
     position: absolute;
+
     top: 20px;
+
     right: 20px;
+
     text-align: right;
+
     font-size: 13px;
 }
 
 #crosshair {
     position: absolute;
+
     top: 50%;
     left: 50%;
+
     width: 8px;
     height: 8px;
-    transform: translate(-50%, -50%);
-    border: 1px solid white;
+
+    transform:
+        translate(-50%, -50%);
+
+    border:
+        1px solid white;
+
     border-radius: 50%;
 }
 
 #hint {
     position: absolute;
+
     bottom: 25px;
+
     right: 25px;
+
     font-size: 12px;
+
     color: #ddd;
+
     text-align: right;
 }
 
 #flashlightText {
     position: absolute;
+
     top: 60px;
+
     left: 50%;
-    transform: translateX(-50%);
+
+    transform:
+        translateX(-50%);
+
     font-size: 12px;
+
     opacity: .7;
 }
 
 #partyText {
     position: absolute;
+
     top: 20px;
+
     left: 20px;
+
     margin-top: 35px;
+
     font-size: 11px;
+
     color: #aaa;
+
     letter-spacing: 2px;
-}
-
-#message {
-    position: fixed;
-    left: 50%;
-    top: 42%;
-    transform: translate(-50%, -50%);
-    color: white;
-    font-size: 24px;
-    text-align: center;
-    text-shadow: 0 3px 10px black;
-    pointer-events: none;
-    z-index: 20;
-    opacity: 0;
-    transition: opacity .2s;
-}
-
-#damage {
-    position: fixed;
-    inset: 0;
-    background: rgba(150,0,0,.35);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 15;
-    transition: opacity .1s;
 }
 
 #connectionStatus {
     position: absolute;
+
     left: 20px;
+
     top: 20px;
-    font-size: 11px;
-    color: #aaa;
+
+    font-size: 10px;
+
+    color: #888;
+
     letter-spacing: 1px;
+}
+
+#message {
+    position: fixed;
+
+    left: 50%;
+
+    top: 42%;
+
+    transform:
+        translate(-50%, -50%);
+
+    color: white;
+
+    font-size: 24px;
+
+    text-align: center;
+
+    text-shadow:
+        0 3px 10px black;
+
+    pointer-events: none;
+
+    z-index: 20;
+
+    opacity: 0;
+
+    transition:
+        opacity .2s;
+}
+
+#damage {
+    position: fixed;
+
+    inset: 0;
+
+    background:
+        rgba(150,0,0,.35);
+
+    opacity: 0;
+
+    pointer-events: none;
+
+    z-index: 15;
+
+    transition:
+        opacity .1s;
 }
 
 #startScreen,
 #endScreen,
 #errorScreen {
     position: fixed;
+
     inset: 0;
-    background: rgba(0,0,0,.8);
+
+    background:
+        rgba(0,0,0,.8);
+
     display: flex;
+
     align-items: center;
+
     justify-content: center;
+
     z-index: 50;
 }
 
 .panel {
     width: 450px;
+
     max-width: 90%;
-    background: rgba(18,17,8,.95);
-    border: 1px solid #77704b;
+
+    background:
+        rgba(18,17,8,.95);
+
+    border:
+        1px solid #77704b;
+
     color: white;
+
     text-align: center;
+
     padding: 35px;
 }
 
 .panel h1 {
     letter-spacing: 5px;
+
     margin-top: 0;
 }
 
 .panel p {
     color: #aaa;
+
     line-height: 1.6;
 }
 
 button {
     width: 100%;
+
     padding: 14px;
+
     border: none;
+
     background: #c0b55e;
+
     color: #111;
+
     font-size: 15px;
+
     font-weight: bold;
+
     cursor: pointer;
+
     margin-top: 10px;
 }
 
 button:hover {
-    background: #ddd273;
+    background:
+        #ddd273;
 }
 
 .hidden {
@@ -221,6 +330,7 @@ button:hover {
 <body>
 
 <div id="game"></div>
+
 
 <div id="hud">
 
@@ -246,6 +356,7 @@ button:hover {
 
     <div id="message"></div>
 
+
     <div id="healthBox">
 
         <div class="label">
@@ -253,24 +364,30 @@ button:hover {
         </div>
 
         <div class="bar">
+
             <div
                 class="fill"
                 id="health"
             ></div>
+
         </div>
+
 
         <div class="label">
             STAMINA
         </div>
 
         <div class="bar">
+
             <div
                 class="fill"
                 id="stamina"
             ></div>
+
         </div>
 
     </div>
+
 
     <div id="hint">
         WASD — MOVE<br>
@@ -282,10 +399,11 @@ button:hover {
 
 </div>
 
+
 <div id="damage"></div>
 
 
-<!-- START SCREEN -->
+<!-- START -->
 
 <div id="startScreen">
 
@@ -314,9 +432,12 @@ button:hover {
 </div>
 
 
-<!-- CONNECTION ERROR -->
+<!-- ERROR -->
 
-<div id="errorScreen" class="hidden">
+<div
+    id="errorScreen"
+    class="hidden"
+>
 
     <div class="panel">
 
@@ -325,7 +446,7 @@ button:hover {
         </h1>
 
         <p id="errorText">
-            Your party session could not be found.
+            Could not connect to your party.
         </p>
 
         <button
@@ -339,9 +460,12 @@ button:hover {
 </div>
 
 
-<!-- END SCREEN -->
+<!-- END -->
 
-<div id="endScreen" class="hidden">
+<div
+    id="endScreen"
+    class="hidden"
+>
 
     <div class="panel">
 
@@ -369,7 +493,7 @@ import * as THREE from
 
 
 /* =========================================================
-   CONNECTION
+   SERVER
 ========================================================= */
 
 const SERVER =
@@ -377,7 +501,7 @@ const SERVER =
 
 
 /* =========================================================
-   URL / SESSION
+   URL
 ========================================================= */
 
 const params =
@@ -387,7 +511,7 @@ const params =
 
 
 /*
- * Party code can come from URL or storage.
+ * PARTY CODE
  */
 const partyCode =
     params.get("party") ||
@@ -400,8 +524,6 @@ const partyCode =
  * IMPORTANT:
  *
  * Read token from URL first.
- * The lobby sends it here when the
- * host starts the game.
  */
 const urlToken =
     params.get("token");
@@ -415,8 +537,7 @@ const sessionToken =
 
 
 /*
- * Save URL token so reconnects continue
- * working after page changes.
+ * Save token if it came from URL.
  */
 if (
     urlToken
@@ -431,7 +552,7 @@ if (
 
 
 /*
- * Save party code too.
+ * Save party code.
  */
 if (
     partyCode
@@ -453,7 +574,7 @@ const playerName =
 
 
 /* =========================================================
-   VALIDATE SESSION
+   VALIDATE
 ========================================================= */
 
 if (
@@ -467,14 +588,17 @@ if (
         "hidden"
     );
 
+
     document.getElementById(
         "errorText"
     ).textContent =
         "Your party session could not be found.";
 
+
     throw new Error(
-        "Missing party code or session token."
+        "Missing partyCode or sessionToken."
     );
+
 }
 
 
@@ -482,8 +606,7 @@ if (
    GAME STATE
 ========================================================= */
 
-let ws =
-    null;
+let ws = null;
 
 let connected =
     false;
@@ -512,7 +635,7 @@ let damageCooldown =
 let messageTimer =
     0;
 
-let lastPositionSend =
+let lastSend =
     0;
 
 let yaw =
@@ -527,6 +650,7 @@ let bobTime =
 
 const keys =
     {};
+
 
 const remotePlayers =
     new Map();
@@ -544,7 +668,7 @@ document.getElementById(
 
 
 /* =========================================================
-   THREE.JS SCENE
+   THREE SCENE
 ========================================================= */
 
 const scene =
@@ -560,17 +684,22 @@ scene.background =
 scene.fog =
     new THREE.FogExp2(
         0xaaa65f,
-        0.018
+        .018
     );
 
 
 const camera =
     new THREE.PerspectiveCamera(
+
         75,
+
         innerWidth /
         innerHeight,
-        0.05,
+
+        .05,
+
         200
+
     );
 
 
@@ -580,7 +709,10 @@ camera.rotation.order =
 
 const renderer =
     new THREE.WebGLRenderer({
-        antialias: true
+
+        antialias:
+            true
+
     });
 
 
@@ -607,7 +739,9 @@ renderer.shadowMap.type =
 
 
 document
-    .getElementById("game")
+    .getElementById(
+        "game"
+    )
     .appendChild(
         renderer.domElement
     );
@@ -619,9 +753,13 @@ document
 
 const ambient =
     new THREE.HemisphereLight(
+
         0xfff4bb,
+
         0x302b12,
-        0.8
+
+        .8
+
     );
 
 
@@ -632,12 +770,19 @@ scene.add(
 
 const flashlight =
     new THREE.SpotLight(
+
         0xffffff,
+
         65,
+
         30,
+
         Math.PI / 7,
-        0.45,
+
+        .45,
+
         1
+
     );
 
 
@@ -688,27 +833,42 @@ scene.add(
 
 const wallMaterial =
     new THREE.MeshStandardMaterial({
-        color: 0xb1aa63,
-        roughness: 1
+
+        color:
+            0xb1aa63,
+
+        roughness:
+            1
+
     });
 
 
 const floorMaterial =
     new THREE.MeshStandardMaterial({
-        color: 0x756e3c,
-        roughness: 1
+
+        color:
+            0x756e3c,
+
+        roughness:
+            1
+
     });
 
 
 const ceilingMaterial =
     new THREE.MeshStandardMaterial({
-        color: 0xd0ccad,
-        roughness: 1
+
+        color:
+            0xd0ccad,
+
+        roughness:
+            1
+
     });
 
 
 /* =========================================================
-   MAZE
+   MAP
 ========================================================= */
 
 const CELL =
@@ -744,6 +904,7 @@ const maze = [
 const rows =
     maze.length;
 
+
 const cols =
     maze[0].length;
 
@@ -754,11 +915,17 @@ const cols =
 
 const floor =
     new THREE.Mesh(
+
         new THREE.PlaneGeometry(
+
             cols * CELL,
+
             rows * CELL
+
         ),
+
         floorMaterial
+
     );
 
 
@@ -781,11 +948,17 @@ scene.add(
 
 const ceiling =
     new THREE.Mesh(
+
         new THREE.PlaneGeometry(
+
             cols * CELL,
+
             rows * CELL
+
         ),
+
         ceilingMaterial
+
     );
 
 
@@ -833,12 +1006,19 @@ for (
 
         const wall =
             new THREE.Mesh(
+
                 new THREE.BoxGeometry(
+
                     CELL,
+
                     4,
+
                     CELL
+
                 ),
+
                 wallMaterial
+
             );
 
 
@@ -912,9 +1092,13 @@ for (
 
         const light =
             new THREE.PointLight(
+
                 0xffffdd,
+
                 2.2,
+
                 15
+
             );
 
 
@@ -944,14 +1128,24 @@ for (
 
         const lamp =
             new THREE.Mesh(
+
                 new THREE.BoxGeometry(
+
                     2.4,
+
                     .08,
+
                     .4
+
                 ),
+
                 new THREE.MeshBasicMaterial({
-                    color: 0xffffdd
+
+                    color:
+                        0xffffdd
+
                 })
+
             );
 
 
@@ -979,17 +1173,32 @@ const key =
 
 const keyRing =
     new THREE.Mesh(
+
         new THREE.TorusGeometry(
+
             .25,
+
             .07,
+
             8,
+
             20
+
         ),
+
         new THREE.MeshStandardMaterial({
-            color: 0xffd52f,
-            emissive: 0xffa600,
-            emissiveIntensity: 1.5
+
+            color:
+                0xffd52f,
+
+            emissive:
+                0xffa600,
+
+            emissiveIntensity:
+                1.5
+
         })
+
     );
 
 
@@ -1000,16 +1209,30 @@ key.add(
 
 const keyHandle =
     new THREE.Mesh(
+
         new THREE.BoxGeometry(
+
             .08,
+
             .45,
+
             .08
+
         ),
+
         new THREE.MeshStandardMaterial({
-            color: 0xffd52f,
-            emissive: 0xffa600,
-            emissiveIntensity: 1.5
+
+            color:
+                0xffd52f,
+
+            emissive:
+                0xffa600,
+
+            emissiveIntensity:
+                1.5
+
         })
+
     );
 
 
@@ -1022,9 +1245,6 @@ key.add(
 );
 
 
-/*
- * Key location.
- */
 key.position.set(
     25,
     1.2,
@@ -1039,9 +1259,13 @@ scene.add(
 
 const keyGlow =
     new THREE.PointLight(
+
         0xffc400,
+
         2.5,
+
         5
+
     );
 
 
@@ -1065,14 +1289,24 @@ const exit =
 
 const exitDoor =
     new THREE.Mesh(
+
         new THREE.BoxGeometry(
+
             2.4,
+
             3.5,
+
             .25
+
         ),
+
         new THREE.MeshStandardMaterial({
-            color: 0x181818
+
+            color:
+                0x181818
+
         })
+
     );
 
 
@@ -1083,16 +1317,30 @@ exit.add(
 
 const exitSign =
     new THREE.Mesh(
+
         new THREE.BoxGeometry(
+
             2.2,
+
             .45,
+
             .12
+
         ),
+
         new THREE.MeshStandardMaterial({
-            color: 0x3b0808,
-            emissive: 0xff0000,
-            emissiveIntensity: 2
+
+            color:
+                0x3b0808,
+
+            emissive:
+                0xff0000,
+
+            emissiveIntensity:
+                2
+
         })
+
     );
 
 
@@ -1117,6 +1365,32 @@ scene.add(
 );
 
 
+const exitLight =
+    new THREE.PointLight(
+
+        0xff1717,
+
+        1.5,
+
+        8
+
+    );
+
+
+exitLight.position.copy(
+    exit.position
+);
+
+
+exitLight.position.y =
+    2.5;
+
+
+scene.add(
+    exitLight
+);
+
+
 /* =========================================================
    MONSTER
 ========================================================= */
@@ -1127,15 +1401,26 @@ const monster =
 
 const monsterBody =
     new THREE.Mesh(
+
         new THREE.CapsuleGeometry(
+
             .45,
+
             1.6,
+
             5,
+
             10
+
         ),
+
         new THREE.MeshStandardMaterial({
-            color: 0x050505
+
+            color:
+                0x050505
+
         })
+
     );
 
 
@@ -1150,14 +1435,24 @@ monster.add(
 
 const monsterHead =
     new THREE.Mesh(
+
         new THREE.SphereGeometry(
+
             .43,
+
             16,
+
             16
+
         ),
+
         new THREE.MeshStandardMaterial({
-            color: 0x020202
+
+            color:
+                0x020202
+
         })
+
     );
 
 
@@ -1172,18 +1467,28 @@ monster.add(
 
 const eyeMaterial =
     new THREE.MeshBasicMaterial({
-        color: 0xff1111
+
+        color:
+            0xff1111
+
     });
 
 
 const eye1 =
     new THREE.Mesh(
+
         new THREE.SphereGeometry(
+
             .06,
+
             8,
+
             8
+
         ),
+
         eyeMaterial
+
     );
 
 
@@ -1192,16 +1497,24 @@ const eye2 =
 
 
 eye1.position.set(
+
     -.14,
+
     2.53,
+
     -.39
+
 );
 
 
 eye2.position.set(
+
     .14,
+
     2.53,
+
     -.39
+
 );
 
 
@@ -1229,9 +1542,13 @@ scene.add(
 
 const player =
     new THREE.Vector3(
+
         -50,
+
         1.6,
+
         40
+
     );
 
 
@@ -1414,7 +1731,7 @@ document.addEventListener(
 
 
 /* =========================================================
-   NETWORK CONNECTION
+   NETWORK
 ========================================================= */
 
 function connectServer() {
@@ -1443,10 +1760,6 @@ function connectServer() {
             "CONNECTED";
 
 
-        /*
-         * Join using the exact token
-         * supplied by the lobby.
-         */
         ws.send(
             JSON.stringify({
 
@@ -1539,10 +1852,6 @@ function connectServer() {
 }
 
 
-/* =========================================================
-   NETWORK SEND
-========================================================= */
-
 function networkSend(
     data
 ) {
@@ -1572,8 +1881,6 @@ function handleNetwork(
     data
 ) {
 
-    /* GAME JOINED */
-
     if (
         data.type ===
         "gameJoined"
@@ -1583,10 +1890,16 @@ function handleNetwork(
             true;
 
 
-        document.getElementById(
-            "connectionStatus"
-        ).textContent =
-            "CONNECTED";
+        if (
+            data.token
+        ) {
+
+            localStorage.setItem(
+                "backroomsSession",
+                data.token
+            );
+
+        }
 
 
         keyCollected =
@@ -1615,8 +1928,6 @@ function handleNetwork(
     }
 
 
-    /* PLAYERS */
-
     if (
         data.type ===
         "players"
@@ -1631,8 +1942,6 @@ function handleNetwork(
 
     }
 
-
-    /* KEY */
 
     if (
         data.type ===
@@ -1664,19 +1973,20 @@ function handleNetwork(
     }
 
 
-    /* WIN */
-
     if (
         data.type ===
         "gameWon"
     ) {
 
         finishGame(
+
             true,
+
             data.name
                 ? data.name +
                   " found the exit."
                 : "You escaped the Backrooms."
+
         );
 
 
@@ -1684,8 +1994,6 @@ function handleNetwork(
 
     }
 
-
-    /* LOSS */
 
     if (
         data.type ===
@@ -1693,11 +2001,14 @@ function handleNetwork(
     ) {
 
         finishGame(
+
             false,
+
             data.name
                 ? data.name +
                   " was caught."
                 : "Something found you."
+
         );
 
 
@@ -1705,8 +2016,6 @@ function handleNetwork(
 
     }
 
-
-    /* ERROR */
 
     if (
         data.type ===
@@ -1733,7 +2042,7 @@ function handleNetwork(
 
 
 /* =========================================================
-   REMOTE PLAYERS
+   REMOTE PLAYER
 ========================================================= */
 
 function createRemotePlayer(
@@ -1746,15 +2055,26 @@ function createRemotePlayer(
 
     const body =
         new THREE.Mesh(
+
             new THREE.CapsuleGeometry(
+
                 .35,
+
                 1.05,
+
                 5,
+
                 10
+
             ),
+
             new THREE.MeshStandardMaterial({
-                color: 0x426c87
+
+                color:
+                    0x426c87
+
             })
+
         );
 
 
@@ -1769,12 +2089,19 @@ function createRemotePlayer(
 
     const head =
         new THREE.Mesh(
+
             new THREE.SphereGeometry(
+
                 .35,
+
                 12,
+
                 12
+
             ),
+
             body.material
+
         );
 
 
@@ -1788,7 +2115,7 @@ function createRemotePlayer(
 
 
     /*
-     * NAME LABEL
+     * Name label.
      */
 
     const canvas =
@@ -1799,7 +2126,6 @@ function createRemotePlayer(
 
     canvas.width =
         512;
-
 
     canvas.height =
         128;
@@ -1824,10 +2150,14 @@ function createRemotePlayer(
 
 
     ctx.fillText(
+
         remote.name ||
         "Player",
+
         256,
+
         60
+
     );
 
 
@@ -1839,12 +2169,17 @@ function createRemotePlayer(
 
     const label =
         new THREE.Sprite(
+
             new THREE.SpriteMaterial({
+
                 map:
                     texture,
+
                 transparent:
                     true
+
             })
+
         );
 
 
@@ -1865,9 +2200,13 @@ function createRemotePlayer(
 
 
     group.position.set(
+
         remote.x || 0,
+
         0,
+
         remote.z || 0
+
     );
 
 
@@ -1878,7 +2217,8 @@ function createRemotePlayer(
 
     return {
 
-        group,
+        group:
+            group,
 
         targetX:
             remote.x || 0,
@@ -1895,7 +2235,7 @@ function createRemotePlayer(
 
 
 /* =========================================================
-   SYNC REMOTE PLAYERS
+   REMOTE PLAYER SYNC
 ========================================================= */
 
 function syncPlayers(
@@ -1933,10 +2273,13 @@ function syncPlayers(
         ) {
 
             remotePlayers.set(
+
                 remote.id,
+
                 createRemotePlayer(
                     remote
                 )
+
             );
 
         }
@@ -1971,7 +2314,9 @@ function syncPlayers(
     ) {
 
         if (
-            !active.has(id)
+            !active.has(
+                id
+            )
         ) {
 
             scene.remove(
@@ -1998,7 +2343,7 @@ function syncPlayers(
 
 
 /* =========================================================
-   PLAYER MOVEMENT
+   MOVEMENT
 ========================================================= */
 
 function updatePlayer(
@@ -2025,25 +2370,29 @@ function updatePlayer(
     if (
         keys.KeyW
     )
-        forward += 1;
+        forward +=
+            1;
 
 
     if (
         keys.KeyS
     )
-        forward -= 1;
+        forward -=
+            1;
 
 
     if (
         keys.KeyD
     )
-        strafe += 1;
+        strafe +=
+            1;
 
 
     if (
         keys.KeyA
     )
-        strafe -= 1;
+        strafe -=
+            1;
 
 
     const moving =
@@ -2073,8 +2422,8 @@ function updatePlayer(
 
 
     if (
-        sprinting &&
-        moving
+        moving &&
+        sprinting
     ) {
 
         stamina -=
@@ -2092,9 +2441,13 @@ function updatePlayer(
 
     stamina =
         THREE.MathUtils.clamp(
+
             stamina,
+
             0,
+
             100
+
         );
 
 
@@ -2131,19 +2484,24 @@ function updatePlayer(
 
 
         direction.applyAxisAngle(
+
             new THREE.Vector3(
                 0,
                 1,
                 0
             ),
+
             yaw
+
         );
 
 
         const movement =
             direction.multiplyScalar(
+
                 speed *
                 delta
+
             );
 
 
@@ -2231,13 +2589,6 @@ function updatePlayer(
 
     camera.rotation.x =
         pitch;
-
-
-    flashlight.position.set(
-        0,
-        1.6,
-        0
-    );
 
 }
 
@@ -2377,10 +2728,6 @@ function updateMonster(
         );
 
 
-    /*
-     * Monster activates when close.
-     */
-
     if (
         distance <
         34
@@ -2388,9 +2735,13 @@ function updateMonster(
 
         const direction =
             new THREE.Vector3(
+
                 dx,
+
                 0,
+
                 dz
+
             );
 
 
@@ -2458,9 +2809,13 @@ function updateMonster(
 
 
             monster.lookAt(
+
                 player.x,
+
                 1.4,
+
                 player.z
+
             );
 
         }
@@ -2468,17 +2823,17 @@ function updateMonster(
     }
 
 
-    /*
-     * Danger effect.
-     */
-
     const danger =
         THREE.MathUtils.clamp(
+
             1 -
             distance /
             14,
+
             0,
+
             1
+
         );
 
 
@@ -2490,10 +2845,6 @@ function updateMonster(
             .75
         );
 
-
-    /*
-     * Monster attacks.
-     */
 
     if (
         distance <
@@ -2550,8 +2901,11 @@ function updateObjective() {
     document.getElementById(
         "objective"
     ).textContent =
+
         keyCollected
+
         ? "KEY FOUND — FIND THE EXIT"
+
         : "FIND THE KEY";
 
 }
@@ -2639,7 +2993,7 @@ function updateHUD(
 
 
 /* =========================================================
-   POSITION SEND
+   POSITION SYNC
 ========================================================= */
 
 function sendPosition() {
@@ -2659,7 +3013,7 @@ function sendPosition() {
 
     if (
         now -
-        lastPositionSend <
+        lastSend <
         70
     ) {
 
@@ -2668,7 +3022,7 @@ function sendPosition() {
     }
 
 
-    lastPositionSend =
+    lastSend =
         now;
 
 
@@ -2751,7 +3105,7 @@ function finishGame(
 
 
 /* =========================================================
-   ENTER BACKROOMS
+   PLAY
 ========================================================= */
 
 document.getElementById(
@@ -2848,10 +3202,6 @@ function animate() {
 
     sendPosition();
 
-
-    /*
-     * Smooth multiplayer players.
-     */
 
     for (
         const remote
