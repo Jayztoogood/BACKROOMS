@@ -27,35 +27,19 @@ const MIME = {
 ========================================================= */
 
 function send(ws, data) {
-
     if (
         ws &&
         ws.readyState === WebSocket.OPEN
     ) {
-
-        ws.send(
-            JSON.stringify(data)
-        );
-
+        ws.send(JSON.stringify(data));
     }
-
 }
 
 
 function broadcast(party, data) {
-
-    for (
-        const player
-        of party.players.values()
-    ) {
-
-        send(
-            player.ws,
-            data
-        );
-
+    for (const player of party.players.values()) {
+        send(player.ws, data);
     }
-
 }
 
 
@@ -70,97 +54,60 @@ function makeCode() {
 
         code = "";
 
-        for (
-            let i = 0;
-            i < 5;
-            i++
-        ) {
-
+        for (let i = 0; i < 5; i++) {
             code += chars[
                 Math.floor(
-                    Math.random() *
-                    chars.length
+                    Math.random() * chars.length
                 )
             ];
-
         }
 
-    } while (
-        parties.has(code)
-    );
+    } while (parties.has(code));
 
     return code;
-
 }
 
 
 function makeToken() {
-
-    return crypto
-        .randomBytes(24)
-        .toString("hex");
-
+    return crypto.randomBytes(24).toString("hex");
 }
 
 
 function cleanName(name) {
 
-    let result =
-        String(
-            name || "Player"
-        )
-        .replace(
-            /[^a-zA-Z0-9 _-]/g,
-            ""
-        )
-        .trim()
-        .slice(0, 16);
+    const cleaned =
+        String(name || "Player")
+            .replace(
+                /[^a-zA-Z0-9 _-]/g,
+                ""
+            )
+            .trim()
+            .slice(0, 16);
 
-    return result ||
-        "Player";
-
+    return cleaned || "Player";
 }
 
 
 /* =========================================================
-   LOBBY
+   LOBBY DATA
 ========================================================= */
 
-function lobbyPlayers(party) {
+function getLobbyPlayers(party) {
 
     return [
         ...party.players.values()
-    ].map(
-        player => ({
-
-            id:
-                player.id,
-
-            name:
-                player.name,
-
-            host:
-                player.id ===
-                party.host
-
-        })
-    );
-
+    ].map(player => ({
+        id: player.id,
+        name: player.name,
+        host: player.id === party.host
+    }));
 }
 
 
-/*
- * IMPORTANT:
- *
- * Every player receives their OWN
- * youAreHost value.
- */
-
-function broadcastLobby(party) {
+function sendLobby(party) {
 
     const players =
-        lobbyPlayers(party);
-
+        getLobbyPlayers(party);
 
     for (
         const player
@@ -170,70 +117,61 @@ function broadcastLobby(party) {
         send(
             player.ws,
             {
+                type: "lobby",
 
-                type:
-                    "lobby",
+                code: party.code,
 
-                code:
-                    party.code,
+                host: party.host,
 
                 players,
 
+                /*
+                 * This is specifically for the
+                 * current browser connection.
+                 */
                 youAreHost:
-                    player.id ===
-                    party.host
-
+                    player.id === party.host
             }
         );
 
     }
-
 }
 
 
 /* =========================================================
-   PLAYER POSITIONS
+   GAME PLAYER DATA
 ========================================================= */
 
-function broadcastPlayers(party) {
+function sendPlayers(party) {
 
     const players =
         [
             ...party.players.values()
-        ].map(
-            player => ({
-
-                id:
-                    player.id,
-
-                name:
-                    player.name,
-
-                x:
-                    player.x || -42,
-
-                y:
-                    player.y || 1.6,
-
-                z:
-                    player.z || 42
-
-            })
-        );
+        ].map(player => ({
+            id: player.id,
+            name: player.name,
+            x:
+                Number.isFinite(player.x)
+                    ? player.x
+                    : -42,
+            y:
+                Number.isFinite(player.y)
+                    ? player.y
+                    : 1.6,
+            z:
+                Number.isFinite(player.z)
+                    ? player.z
+                    : 42
+        }));
 
 
     broadcast(
         party,
         {
-
-            type:
-                "players",
-
+            type: "players",
             players
-
         }
     );
-
 }
 
 
@@ -241,35 +179,26 @@ function broadcastPlayers(party) {
    REMOVE PLAYER
 ========================================================= */
 
-function removePlayer(player) {
+function trulyRemovePlayer(player) {
 
-    if (!player)
+    if (!player) {
         return;
-
-
-    if (!player.party)
-        return;
-
+    }
 
     const party =
-        parties.get(
-            player.party
-        );
+        parties.get(player.party);
 
-
-    if (!party)
+    if (!party) {
         return;
+    }
 
 
     /*
-     * Don't delete the player if this is
-     * an old socket and they already
-     * reconnected with a new socket.
+     * Only delete the exact player object.
      */
-
     if (
-        player.ws &&
-        player.ws._closingHandled
+        party.players.get(player.id) !==
+        player
     ) {
         return;
     }
@@ -279,26 +208,21 @@ function removePlayer(player) {
         player.id
     );
 
-
     sessions.delete(
         player.id
     );
 
 
     /*
-     * Give host control to another player.
+     * If host leaves permanently,
+     * give host to somebody else.
      */
-
     if (
-        party.host ===
-        player.id
+        party.host === player.id
     ) {
 
         const next =
-            party.players
-                .values()
-                .next();
-
+            party.players.values().next();
 
         if (!next.done) {
 
@@ -310,6 +234,9 @@ function removePlayer(player) {
     }
 
 
+    /*
+     * Delete empty party.
+     */
     if (
         party.players.size === 0
     ) {
@@ -319,18 +246,120 @@ function removePlayer(player) {
         );
 
         return;
-
     }
 
 
-    broadcastLobby(
+    sendLobby(
         party
     );
 
-    broadcastPlayers(
+    sendPlayers(
         party
     );
+}
 
+
+function handleDisconnect(player, socket) {
+
+    if (!player) {
+        return;
+    }
+
+
+    /*
+     * A newer socket has already replaced
+     * this socket.
+     */
+    if (
+        player.ws !== socket
+    ) {
+        return;
+    }
+
+
+    const party =
+        parties.get(player.party);
+
+    if (!party) {
+        return;
+    }
+
+
+    /*
+     * CRITICAL FIX:
+     *
+     * When the host/friend leaves index.html
+     * and immediately opens game.html, the old
+     * lobby WebSocket closes.
+     *
+     * DON'T remove the player immediately.
+     *
+     * Give game.html time to reconnect using
+     * the same session token.
+     */
+
+    if (party.started) {
+
+        const oldSocket =
+            player.ws;
+
+
+        player.disconnectedAt =
+            Date.now();
+
+
+        if (
+            player.disconnectTimer
+        ) {
+
+            clearTimeout(
+                player.disconnectTimer
+            );
+
+        }
+
+
+        player.disconnectTimer =
+            setTimeout(
+                () => {
+
+                    /*
+                     * If game.html has reconnected,
+                     * player.ws will be different.
+                     */
+                    if (
+                        player.ws !==
+                        oldSocket
+                    ) {
+
+                        return;
+                    }
+
+
+                    /*
+                     * Still disconnected after
+                     * the grace period.
+                     */
+                    trulyRemovePlayer(
+                        player
+                    );
+
+                },
+                15000
+            );
+
+
+        return;
+    }
+
+
+    /*
+     * Normal lobby disconnect:
+     * remove immediately.
+     */
+    trulyRemovePlayer(
+        player
+    );
 }
 
 
@@ -356,7 +385,7 @@ const server =
             }
 
 
-            let filePath =
+            const filePath =
                 path.normalize(
                     path.join(
                         __dirname,
@@ -378,7 +407,6 @@ const server =
                 );
 
                 return;
-
             }
 
 
@@ -397,7 +425,6 @@ const server =
                         );
 
                         return;
-
                     }
 
 
@@ -415,7 +442,7 @@ const server =
                                 "application/octet-stream",
 
                             "Cache-Control":
-                                "no-cache"
+                                "no-store"
                         }
                     );
 
@@ -476,7 +503,6 @@ wss.on(
                     );
 
                     return;
-
                 }
 
 
@@ -488,6 +514,27 @@ wss.on(
                     data.type ===
                     "createParty"
                 ) {
+
+                    /*
+                     * Don't allow one socket to create
+                     * multiple parties.
+                     */
+                    if (player) {
+
+                        send(
+                            ws,
+                            {
+                                type:
+                                    "error",
+
+                                message:
+                                    "You are already connected."
+                            }
+                        );
+
+                        return;
+                    }
+
 
                     const name =
                         cleanName(
@@ -524,7 +571,10 @@ wss.on(
                             1.6,
 
                         z:
-                            42
+                            42,
+
+                        disconnectTimer:
+                            null
 
                     };
 
@@ -571,33 +621,21 @@ wss.on(
                         newPlayer;
 
 
-                    /*
-                     * Send session FIRST.
-                     */
-
                     send(
                         ws,
                         {
-
                             type:
                                 "session",
 
                             token:
                                 token
-
                         }
                     );
 
 
-                    /*
-                     * Tell creator they are
-                     * the host.
-                     */
-
                     send(
                         ws,
                         {
-
                             type:
                                 "partyCreated",
 
@@ -606,23 +644,16 @@ wss.on(
 
                             host:
                                 true
-
                         }
                     );
 
 
-                    /*
-                     * Send lobby with
-                     * youAreHost:true.
-                     */
-
-                    broadcastLobby(
+                    sendLobby(
                         party
                     );
 
 
                     return;
-
                 }
 
 
@@ -634,6 +665,23 @@ wss.on(
                     data.type ===
                     "joinParty"
                 ) {
+
+                    if (player) {
+
+                        send(
+                            ws,
+                            {
+                                type:
+                                    "error",
+
+                                message:
+                                    "You are already connected."
+                            }
+                        );
+
+                        return;
+                    }
+
 
                     const code =
                         String(
@@ -669,7 +717,6 @@ wss.on(
                         );
 
                         return;
-
                     }
 
 
@@ -689,13 +736,11 @@ wss.on(
                         );
 
                         return;
-
                     }
 
 
                     if (
-                        party.players.size >=
-                        8
+                        party.players.size >= 8
                     ) {
 
                         send(
@@ -710,7 +755,6 @@ wss.on(
                         );
 
                         return;
-
                     }
 
 
@@ -739,7 +783,10 @@ wss.on(
                             1.6,
 
                         z:
-                            42
+                            42,
+
+                        disconnectTimer:
+                            null
 
                     };
 
@@ -763,13 +810,11 @@ wss.on(
                     send(
                         ws,
                         {
-
                             type:
                                 "session",
 
                             token:
                                 token
-
                         }
                     );
 
@@ -777,7 +822,6 @@ wss.on(
                     send(
                         ws,
                         {
-
                             type:
                                 "partyJoined",
 
@@ -785,24 +829,23 @@ wss.on(
                                 code,
 
                             host:
-                                false
-
+                                player.id ===
+                                party.host
                         }
                     );
 
 
-                    broadcastLobby(
+                    sendLobby(
                         party
                     );
 
 
                     return;
-
                 }
 
 
                 /* =================================================
-                   RECONNECT
+                   RECONNECT FROM LOBBY
                 ================================================= */
 
                 if (
@@ -845,63 +888,55 @@ wss.on(
                         send(
                             ws,
                             {
-
                                 type:
                                     "error",
 
                                 message:
                                     "Your party session expired."
-
                             }
                         );
 
                         return;
-
                     }
 
 
                     /*
-                     * Replace old socket.
+                     * Cancel any pending removal.
                      */
+                    if (
+                        existing.disconnectTimer
+                    ) {
 
-                    const oldSocket =
-                        existing.ws;
+                        clearTimeout(
+                            existing.disconnectTimer
+                        );
+
+                        existing.disconnectTimer =
+                            null;
+
+                    }
 
 
                     existing.ws =
                         ws;
 
 
+                    existing.disconnectedAt =
+                        null;
+
+
                     player =
                         existing;
-
-
-                    /*
-                     * Prevent the old socket from
-                     * deleting this player.
-                     */
-
-                    if (
-                        oldSocket &&
-                        oldSocket !== ws
-                    ) {
-
-                        oldSocket._replaced =
-                            true;
-
-                    }
 
 
                     send(
                         ws,
                         {
-
                             type:
                                 "session",
 
                             token:
                                 token
-
                         }
                     );
 
@@ -913,10 +948,8 @@ wss.on(
                         send(
                             ws,
                             {
-
                                 type:
                                     "gameStarted"
-
                             }
                         );
 
@@ -925,7 +958,6 @@ wss.on(
                         send(
                             ws,
                             {
-
                                 type:
                                     "partyJoined",
 
@@ -935,12 +967,11 @@ wss.on(
                                 host:
                                     existing.id ===
                                     party.host
-
                             }
                         );
 
 
-                        broadcastLobby(
+                        sendLobby(
                             party
                         );
 
@@ -948,7 +979,6 @@ wss.on(
 
 
                     return;
-
                 }
 
 
@@ -966,18 +996,15 @@ wss.on(
                         send(
                             ws,
                             {
-
                                 type:
                                     "error",
 
                                 message:
                                     "You are not in a party."
-
                             }
                         );
 
                         return;
-
                     }
 
 
@@ -987,13 +1014,10 @@ wss.on(
                         );
 
 
-                    if (!party)
+                    if (!party) {
                         return;
+                    }
 
-
-                    /*
-                     * SERVER-SIDE HOST CHECK
-                     */
 
                     if (
                         player.id !==
@@ -1003,27 +1027,22 @@ wss.on(
                         send(
                             ws,
                             {
-
                                 type:
                                     "error",
 
                                 message:
                                     "Only the host can start the game."
-
                             }
                         );
 
                         return;
-
                     }
 
 
                     if (
                         party.started
                     ) {
-
                         return;
-
                     }
 
 
@@ -1032,9 +1051,8 @@ wss.on(
 
 
                     /*
-                     * START FOR EVERYONE.
+                     * Everyone gets gameStarted.
                      */
-
                     for (
                         const p
                         of party.players.values()
@@ -1043,10 +1061,8 @@ wss.on(
                         send(
                             p.ws,
                             {
-
                                 type:
                                     "gameStarted"
-
                             }
                         );
 
@@ -1054,7 +1070,6 @@ wss.on(
 
 
                     return;
-
                 }
 
 
@@ -1102,38 +1117,62 @@ wss.on(
                         send(
                             ws,
                             {
-
                                 type:
                                     "error",
 
                                 message:
-                                    "Could not reconnect to the game."
-
+                                    "Could not reconnect to your party."
                             }
                         );
 
                         return;
+                    }
+
+
+                    /*
+                     * Stop the old disconnect timer.
+                     */
+                    if (
+                        existing.disconnectTimer
+                    ) {
+
+                        clearTimeout(
+                            existing.disconnectTimer
+                        );
+
+                        existing.disconnectTimer =
+                            null;
 
                     }
 
 
                     /*
-                     * Replace the lobby socket with
-                     * the game socket.
+                     * Remember old socket.
                      */
-
                     const oldSocket =
                         existing.ws;
 
 
+                    /*
+                     * Attach the new game socket.
+                     */
                     existing.ws =
                         ws;
+
+
+                    existing.disconnectedAt =
+                        null;
 
 
                     player =
                         existing;
 
 
+                    /*
+                     * Mark old socket as replaced so
+                     * its close event doesn't remove
+                     * the player.
+                     */
                     if (
                         oldSocket &&
                         oldSocket !== ws
@@ -1159,18 +1198,17 @@ wss.on(
                     );
 
 
-                    broadcastPlayers(
+                    sendPlayers(
                         party
                     );
 
 
                     return;
-
                 }
 
 
                 /* =================================================
-                   PLAYER UPDATE
+                   PLAYER MOVEMENT
                 ================================================= */
 
                 if (
@@ -1178,8 +1216,9 @@ wss.on(
                     "playerUpdate"
                 ) {
 
-                    if (!player)
+                    if (!player) {
                         return;
+                    }
 
 
                     const party =
@@ -1188,26 +1227,21 @@ wss.on(
                         );
 
 
-                    if (!party)
+                    if (!party) {
                         return;
+                    }
 
 
                     const x =
-                        Number(
-                            data.x
-                        );
+                        Number(data.x);
 
 
                     const y =
-                        Number(
-                            data.y
-                        );
+                        Number(data.y);
 
 
                     const z =
-                        Number(
-                            data.z
-                        );
+                        Number(data.z);
 
 
                     if (
@@ -1252,13 +1286,16 @@ wss.on(
                     }
 
 
-                    broadcastPlayers(
+                    /*
+                     * Send current positions
+                     * to everyone.
+                     */
+                    sendPlayers(
                         party
                     );
 
 
                     return;
-
                 }
 
 
@@ -1271,8 +1308,9 @@ wss.on(
                     "collectKey"
                 ) {
 
-                    if (!player)
+                    if (!player) {
                         return;
+                    }
 
 
                     const party =
@@ -1281,8 +1319,9 @@ wss.on(
                         );
 
 
-                    if (!party)
+                    if (!party) {
                         return;
+                    }
 
 
                     if (
@@ -1290,7 +1329,6 @@ wss.on(
                     ) {
 
                         return;
-
                     }
 
 
@@ -1301,16 +1339,13 @@ wss.on(
                     broadcast(
                         party,
                         {
-
                             type:
                                 "keyCollected"
-
                         }
                     );
 
 
                     return;
-
                 }
 
 
@@ -1323,8 +1358,9 @@ wss.on(
                     "gameWon"
                 ) {
 
-                    if (!player)
+                    if (!player) {
                         return;
+                    }
 
 
                     const party =
@@ -1333,8 +1369,9 @@ wss.on(
                         );
 
 
-                    if (!party)
+                    if (!party) {
                         return;
+                    }
 
 
                     broadcast(
@@ -1352,7 +1389,6 @@ wss.on(
 
 
                     return;
-
                 }
 
 
@@ -1365,8 +1401,9 @@ wss.on(
                     "gameOver"
                 ) {
 
-                    if (!player)
+                    if (!player) {
                         return;
+                    }
 
 
                     const party =
@@ -1375,8 +1412,9 @@ wss.on(
                         );
 
 
-                    if (!party)
+                    if (!party) {
                         return;
+                    }
 
 
                     broadcast(
@@ -1394,7 +1432,6 @@ wss.on(
 
 
                     return;
-
                 }
 
             }
@@ -1406,10 +1443,9 @@ wss.on(
             () => {
 
                 /*
-                 * If this socket was replaced by a
-                 * newer socket, DON'T remove the player.
+                 * A replaced lobby socket closing
+                 * must NOT remove the player.
                  */
-
                 if (
                     ws._replaced
                 ) {
@@ -1419,16 +1455,10 @@ wss.on(
                 }
 
 
-                if (
-                    player &&
-                    player.ws === ws
-                ) {
-
-                    removePlayer(
-                        player
-                    );
-
-                }
+                handleDisconnect(
+                    player,
+                    ws
+                );
 
             }
         );
@@ -1447,16 +1477,10 @@ wss.on(
                 }
 
 
-                if (
-                    player &&
-                    player.ws === ws
-                ) {
-
-                    removePlayer(
-                        player
-                    );
-
-                }
+                handleDisconnect(
+                    player,
+                    ws
+                );
 
             }
         );
@@ -1474,7 +1498,19 @@ server.listen(
     () => {
 
         console.log(
-            `THE BACKROOMS server running on port ${PORT}`
+            "================================="
+        );
+
+        console.log(
+            " THE BACKROOMS MULTIPLAYER SERVER"
+        );
+
+        console.log(
+            "================================="
+        );
+
+        console.log(
+            `Listening on port ${PORT}`
         );
 
     }
