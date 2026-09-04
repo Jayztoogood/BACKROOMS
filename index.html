@@ -162,6 +162,11 @@ button.secondary:hover {
     font-size: 12px;
     color: #777;
 }
+
+/* START GAME uses the exact same button style */
+#startBtn {
+    display: none;
+}
 </style>
 </head>
 
@@ -184,6 +189,7 @@ button.secondary:hover {
             id="name"
             maxlength="16"
             placeholder="Enter your name"
+            autocomplete="off"
         >
 
         <button id="createBtn">
@@ -201,6 +207,7 @@ button.secondary:hover {
                 maxlength="5"
                 placeholder="PARTY CODE"
                 style="text-transform:uppercase"
+                autocomplete="off"
             >
 
             <button id="joinConfirm">
@@ -236,7 +243,7 @@ button.secondary:hover {
         <div class="players" id="players"></div>
 
         <!-- HOST ONLY -->
-        <button id="startBtn" style="display:none;">
+        <button id="startBtn">
             START GAME
         </button>
 
@@ -253,7 +260,13 @@ button.secondary:hover {
 
 <script>
 
-const SERVER = "wss://backrooms-avnx.onrender.com";
+const SERVER =
+    "wss://backrooms-avnx.onrender.com";
+
+
+/* =========================================================
+   STATE
+========================================================= */
 
 let ws = null;
 
@@ -266,11 +279,16 @@ let sessionToken =
 let partyCode =
     localStorage.getItem("partyCode") || "";
 
-/*
- * This tracks whether THIS browser is the host.
- */
 let isHost = false;
 
+let reconnectTimer = null;
+
+let intentionalClose = false;
+
+
+/* =========================================================
+   ELEMENTS
+========================================================= */
 
 const menu =
     document.getElementById("menu");
@@ -293,42 +311,81 @@ const partyError =
 const connectionStatus =
     document.getElementById("connectionStatus");
 
+const partyCodeElement =
+    document.getElementById("partyCode");
+
+const playersElement =
+    document.getElementById("players");
+
 const startBtn =
     document.getElementById("startBtn");
 
-const playersContainer =
-    document.getElementById("players");
+const joinBox =
+    document.getElementById("joinBox");
 
 
-nameInput.value = playerName;
+nameInput.value =
+    playerName;
 
 
-/* =========================
-   CONNECTION
-========================= */
+/* =========================================================
+   CONNECT
+========================================================= */
 
 function connect() {
 
-    ws = new WebSocket(SERVER);
+    if (
+        ws &&
+        (
+            ws.readyState === WebSocket.OPEN ||
+            ws.readyState === WebSocket.CONNECTING
+        )
+    ) {
+        return;
+    }
+
+
+    connectionStatus.textContent =
+        "Connecting...";
+
+
+    ws =
+        new WebSocket(SERVER);
+
 
     ws.onopen = () => {
 
         connectionStatus.textContent =
             "CONNECTED";
 
-        /*
-         * Reconnect to an existing party
-         * if we still have a saved session.
-         */
-        if (sessionToken && partyCode) {
 
-            ws.send(JSON.stringify({
+        /*
+         * If this browser already has a valid
+         * saved party session, reconnect.
+         */
+
+        if (
+            sessionToken &&
+            partyCode
+        ) {
+
+            send({
                 type: "reconnect",
                 token: sessionToken,
                 code: partyCode,
                 name: playerName
-            }));
+            });
+
         }
+
+    };
+
+
+    ws.onerror = () => {
+
+        connectionStatus.textContent =
+            "CONNECTION ERROR";
+
     };
 
 
@@ -337,14 +394,23 @@ function connect() {
         connectionStatus.textContent =
             "DISCONNECTED";
 
-        setTimeout(connect, 2500);
-    };
 
+        if (
+            !intentionalClose
+        ) {
 
-    ws.onerror = () => {
+            clearTimeout(
+                reconnectTimer
+            );
 
-        connectionStatus.textContent =
-            "CONNECTION ERROR";
+            reconnectTimer =
+                setTimeout(
+                    connect,
+                    2000
+                );
+
+        }
+
     };
 
 
@@ -354,31 +420,62 @@ function connect() {
 
         try {
 
-            data = JSON.parse(event.data);
+            data =
+                JSON.parse(
+                    event.data
+                );
 
         } catch {
 
             return;
+
         }
 
         handleMessage(data);
+
     };
+
 }
 
 
-/* =========================
+/* =========================================================
+   SEND
+========================================================= */
+
+function send(data) {
+
+    if (
+        ws &&
+        ws.readyState ===
+        WebSocket.OPEN
+    ) {
+
+        ws.send(
+            JSON.stringify(data)
+        );
+
+        return true;
+    }
+
+    return false;
+}
+
+
+/* =========================================================
    SERVER MESSAGES
-========================= */
+========================================================= */
 
 function handleMessage(data) {
 
 
-    /*
-     * SERVER GIVES US OUR SESSION TOKEN
-     */
-    if (data.type === "session") {
+    /* SESSION */
 
-        sessionToken = data.token;
+    if (
+        data.type === "session"
+    ) {
+
+        sessionToken =
+            data.token;
 
         localStorage.setItem(
             "backroomsSession",
@@ -389,97 +486,136 @@ function handleMessage(data) {
     }
 
 
-    /*
-     * PARTY CREATED
-     *
-     * The person who creates the party
-     * is ALWAYS the host.
-     */
-    if (data.type === "partyCreated") {
+    /* PARTY CREATED */
 
-        partyCode = data.code;
+    if (
+        data.type === "partyCreated"
+    ) {
+
+        partyCode =
+            data.code;
+
+        isHost =
+            true;
 
         localStorage.setItem(
             "partyCode",
             partyCode
         );
 
-        isHost = true;
-
-        showParty();
 
         /*
-         * IMPORTANT:
+         * SHOW PARTY
+         */
+
+        menu.classList.add(
+            "hidden"
+        );
+
+        party.classList.remove(
+            "hidden"
+        );
+
+
+        partyCodeElement.textContent =
+            partyCode;
+
+
+        /*
+         * MOST IMPORTANT FIX:
+         *
+         * The creator is the host.
          * Show START GAME immediately.
          */
-        startBtn.style.display = "block";
 
-        partyError.textContent = "";
+        startBtn.style.display =
+            "block";
+
+
+        startBtn.disabled =
+            false;
+
+
+        partyError.textContent =
+            "";
+
 
         return;
     }
 
 
-    /*
-     * PARTY JOINED
-     *
-     * Someone joining another person's
-     * party is NOT automatically the host.
-     */
-    if (data.type === "partyJoined") {
+    /* PARTY JOINED */
 
-        partyCode = data.code;
+    if (
+        data.type === "partyJoined"
+    ) {
+
+        partyCode =
+            data.code;
+
+        /*
+         * Joined players aren't host.
+         */
+
+        isHost =
+            false;
 
         localStorage.setItem(
             "partyCode",
             partyCode
         );
 
-        isHost = false;
+
+        menu.classList.add(
+            "hidden"
+        );
+
+        party.classList.remove(
+            "hidden"
+        );
+
+
+        partyCodeElement.textContent =
+            partyCode;
+
 
         /*
-         * Hide START GAME until the lobby
-         * tells us whether we are actually host.
+         * Hide for normal players.
          */
-        startBtn.style.display = "none";
 
-        showParty();
+        startBtn.style.display =
+            "none";
+
 
         return;
     }
 
 
-    /*
-     * LOBBY UPDATE
-     */
-    if (data.type === "lobby") {
+    /* LOBBY UPDATE */
 
-        updatePlayers(data.players || []);
+    if (
+        data.type === "lobby"
+    ) {
+
+        partyCodeElement.textContent =
+            data.code ||
+            partyCode;
+
+
+        updatePlayers(
+            data.players || []
+        );
 
 
         /*
-         * Find ourselves in the player list.
-         */
-        const me =
-            (data.players || []).find(
-                p => p.id === sessionToken
-            );
-
-
-        /*
-         * We are host if either:
+         * The SERVER now tells this exact
+         * connection whether it is host.
          *
-         * 1. Server says our token is host
-         * OR
-         *
-         * 2. Our player entry says host:true
+         * No more guessing based on IDs.
          */
-        const amHost =
-            data.host === sessionToken ||
-            (me && me.host === true);
 
-
-        isHost = !!amHost;
+        isHost =
+            data.youAreHost === true;
 
 
         if (isHost) {
@@ -487,10 +623,14 @@ function handleMessage(data) {
             startBtn.style.display =
                 "block";
 
+            startBtn.disabled =
+                false;
+
         } else {
 
             startBtn.style.display =
                 "none";
+
         }
 
 
@@ -498,32 +638,47 @@ function handleMessage(data) {
     }
 
 
-    /*
-     * GAME STARTED
-     *
-     * Server tells everybody to enter
-     * the game.
-     */
-    if (data.type === "gameStarted") {
+    /* GAME STARTED */
+
+    if (
+        data.type === "gameStarted"
+    ) {
 
         window.location.href =
             "game.html?party=" +
-            encodeURIComponent(partyCode);
+            encodeURIComponent(
+                partyCode
+            );
 
         return;
     }
 
 
-    /*
-     * SERVER ERROR
-     */
-    if (data.type === "error") {
+    /* ERROR */
 
-        error.textContent =
-            data.message || "";
+    if (
+        data.type === "error"
+    ) {
 
-        partyError.textContent =
-            data.message || "";
+        const message =
+            data.message ||
+            "Something went wrong.";
+
+        if (
+            party.classList.contains(
+                "hidden"
+            )
+        ) {
+
+            error.textContent =
+                message;
+
+        } else {
+
+            partyError.textContent =
+                message;
+
+        }
 
         return;
     }
@@ -531,119 +686,111 @@ function handleMessage(data) {
 }
 
 
-/* =========================
-   SHOW PARTY
-========================= */
+/* =========================================================
+   SHOW PLAYERS
+========================================================= */
 
-function showParty() {
+function updatePlayers(
+    players
+) {
 
-    menu.classList.add("hidden");
-
-    party.classList.remove("hidden");
-
-    document.getElementById(
-        "partyCode"
-    ).textContent = partyCode;
-}
+    playersElement.innerHTML =
+        "";
 
 
-/* =========================
-   UPDATE PLAYERS
-========================= */
+    players.forEach(
+        (p, index) => {
 
-function updatePlayers(players) {
+            const div =
+                document.createElement(
+                    "div"
+                );
 
-    playersContainer.innerHTML = "";
-
-
-    players.forEach((p, index) => {
-
-        const div =
-            document.createElement("div");
-
-        div.className = "player";
+            div.className =
+                "player";
 
 
-        let rightSide;
+            const name =
+                document.createElement(
+                    "span"
+                );
+
+            name.textContent =
+                p.name || "Player";
 
 
-        /*
-         * YOU
-         */
-        if (p.id === sessionToken) {
+            const role =
+                document.createElement(
+                    "span"
+                );
 
-            if (p.host) {
 
-                rightSide =
-                    `<span class="host">YOU</span>`;
+            if (
+                p.id === sessionToken
+            ) {
+
+                role.textContent =
+                    "YOU";
+
+                role.className =
+                    "host";
+
+            } else if (
+                p.host
+            ) {
+
+                role.textContent =
+                    "HOST";
+
+                role.className =
+                    "host";
 
             } else {
 
-                rightSide =
-                    `<span class="host">YOU</span>`;
+                role.textContent =
+                    "PLAYER " +
+                    (index + 1);
+
             }
 
+
+            div.appendChild(
+                name
+            );
+
+            div.appendChild(
+                role
+            );
+
+            playersElement.appendChild(
+                div
+            );
+
         }
+    );
 
-        /*
-         * OTHER HOST
-         */
-        else if (p.host) {
-
-            rightSide =
-                `<span class="host">HOST</span>`;
-        }
-
-        /*
-         * NORMAL PLAYER
-         */
-        else {
-
-            rightSide =
-                `<span>PLAYER ${index + 1}</span>`;
-        }
-
-
-        div.innerHTML = `
-            <span>${escapeHTML(p.name)}</span>
-            ${rightSide}
-        `;
-
-
-        playersContainer.appendChild(div);
-
-    });
 }
 
 
-/* =========================
-   HTML ESCAPE
-========================= */
-
-function escapeHTML(text) {
-
-    return String(text)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-
-/* =========================
+/* =========================================================
    CREATE PARTY
-========================= */
+========================================================= */
 
 document.getElementById(
     "createBtn"
 ).onclick = () => {
 
-    const name =
-        nameInput.value.trim();
+    error.textContent =
+        "";
 
 
-    if (!name) {
+    playerName =
+        nameInput.value
+            .trim()
+            .slice(0, 16);
+
+
+    if (!playerName) {
 
         error.textContent =
             "Enter your name first.";
@@ -652,22 +799,18 @@ document.getElementById(
     }
 
 
-    /*
-     * Make sure WebSocket is connected.
-     */
     if (
-        !ws ||
-        ws.readyState !== WebSocket.OPEN
+        !send({
+            type: "createParty",
+            name: playerName
+        })
     ) {
 
         error.textContent =
-            "Still connecting to server...";
+            "Still connecting to the server...";
 
         return;
     }
-
-
-    playerName = name;
 
 
     localStorage.setItem(
@@ -675,44 +818,43 @@ document.getElementById(
         playerName
     );
 
-
-    error.textContent = "";
-
-
-    ws.send(JSON.stringify({
-
-        type: "createParty",
-
-        name: playerName
-
-    }));
 };
 
 
-/* =========================
-   JOIN BUTTON
-========================= */
+/* =========================================================
+   JOIN PARTY BUTTON
+========================================================= */
 
 document.getElementById(
     "joinBtn"
 ).onclick = () => {
 
-    document.getElementById(
-        "joinBox"
-    ).classList.remove("hidden");
+    joinBox.classList.remove(
+        "hidden"
+    );
+
+    codeInput.focus();
+
 };
 
 
-/* =========================
+/* =========================================================
    JOIN PARTY
-========================= */
+========================================================= */
 
 document.getElementById(
     "joinConfirm"
 ).onclick = () => {
 
-    const name =
-        nameInput.value.trim();
+    error.textContent =
+        "";
+
+
+    playerName =
+        nameInput.value
+            .trim()
+            .slice(0, 16);
+
 
     const code =
         codeInput.value
@@ -720,7 +862,7 @@ document.getElementById(
             .toUpperCase();
 
 
-    if (!name) {
+    if (!playerName) {
 
         error.textContent =
             "Enter your name first.";
@@ -729,7 +871,9 @@ document.getElementById(
     }
 
 
-    if (code.length !== 5) {
+    if (
+        code.length !== 5
+    ) {
 
         error.textContent =
             "Party codes are 5 characters.";
@@ -738,22 +882,19 @@ document.getElementById(
     }
 
 
-    /*
-     * Make sure WebSocket is connected.
-     */
     if (
-        !ws ||
-        ws.readyState !== WebSocket.OPEN
+        !send({
+            type: "joinParty",
+            name: playerName,
+            code
+        })
     ) {
 
         error.textContent =
-            "Still connecting to server...";
+            "Still connecting to the server...";
 
         return;
     }
-
-
-    playerName = name;
 
 
     localStorage.setItem(
@@ -761,32 +902,19 @@ document.getElementById(
         playerName
     );
 
-
-    error.textContent = "";
-
-
-    ws.send(JSON.stringify({
-
-        type: "joinParty",
-
-        name: playerName,
-
-        code: code
-
-    }));
 };
 
 
-/* =========================
+/* =========================================================
    START GAME
-========================= */
+========================================================= */
 
 startBtn.onclick = () => {
 
-    /*
-     * Extra safety:
-     * Only the host can press it.
-     */
+    partyError.textContent =
+        "";
+
+
     if (!isHost) {
 
         partyError.textContent =
@@ -797,8 +925,9 @@ startBtn.onclick = () => {
 
 
     if (
-        !ws ||
-        ws.readyState !== WebSocket.OPEN
+        !send({
+            type: "startGame"
+        })
     ) {
 
         partyError.textContent =
@@ -808,40 +937,122 @@ startBtn.onclick = () => {
     }
 
 
-    partyError.textContent = "";
+    startBtn.disabled =
+        true;
 
+    startBtn.textContent =
+        "STARTING...";
 
-    ws.send(JSON.stringify({
-
-        type: "startGame"
-
-    }));
 };
 
 
-/* =========================
-   LEAVE PARTY
-========================= */
+/* =========================================================
+   LEAVE
+========================================================= */
 
 document.getElementById(
     "leaveBtn"
 ).onclick = () => {
 
+    intentionalClose =
+        true;
+
+    clearTimeout(
+        reconnectTimer
+    );
+
+
+    localStorage.removeItem(
+        "backroomsSession"
+    );
+
     localStorage.removeItem(
         "partyCode"
     );
 
-    partyCode = "";
 
-    isHost = false;
+    sessionToken =
+        "";
+
+    partyCode =
+        "";
+
+    if (ws) {
+
+        ws.close();
+
+    }
+
 
     location.reload();
+
 };
 
 
-/* =========================
-   START CONNECTION
-========================= */
+/* =========================================================
+   ENTER KEYS
+========================================================= */
+
+nameInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            document
+                .getElementById(
+                    "createBtn"
+                )
+                .click();
+
+        }
+
+    }
+);
+
+
+codeInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            document
+                .getElementById(
+                    "joinConfirm"
+                )
+                .click();
+
+        }
+
+    }
+);
+
+
+codeInput.addEventListener(
+    "input",
+    () => {
+
+        codeInput.value =
+            codeInput.value
+                .replace(
+                    /[^A-Za-z0-9]/g,
+                    ""
+                )
+                .toUpperCase()
+                .slice(0, 5);
+
+    }
+);
+
+
+/* =========================================================
+   START
+========================================================= */
 
 connect();
 
