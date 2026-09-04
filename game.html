@@ -125,9 +125,11 @@ body {
     position: absolute;
 
     top: 50%;
+
     left: 50%;
 
     width: 8px;
+
     height: 8px;
 
     transform:
@@ -222,9 +224,6 @@ body {
     z-index: 20;
 
     opacity: 0;
-
-    transition:
-        opacity .2s;
 }
 
 #damage {
@@ -240,9 +239,6 @@ body {
     pointer-events: none;
 
     z-index: 15;
-
-    transition:
-        opacity .1s;
 }
 
 #startScreen,
@@ -301,7 +297,8 @@ button {
 
     border: none;
 
-    background: #c0b55e;
+    background:
+        #c0b55e;
 
     color: #111;
 
@@ -403,7 +400,9 @@ button:hover {
 <div id="damage"></div>
 
 
-<!-- START -->
+<!-- ======================================================
+     START
+======================================================= -->
 
 <div id="startScreen">
 
@@ -432,7 +431,9 @@ button:hover {
 </div>
 
 
-<!-- ERROR -->
+<!-- ======================================================
+     ERROR
+======================================================= -->
 
 <div
     id="errorScreen"
@@ -460,7 +461,9 @@ button:hover {
 </div>
 
 
-<!-- END -->
+<!-- ======================================================
+     END
+======================================================= -->
 
 <div
     id="endScreen"
@@ -501,7 +504,7 @@ const SERVER =
 
 
 /* =========================================================
-   URL
+   PARTY / TOKEN
 ========================================================= */
 
 const params =
@@ -510,9 +513,6 @@ const params =
     );
 
 
-/*
- * PARTY CODE
- */
 const partyCode =
     params.get("party") ||
     localStorage.getItem(
@@ -522,14 +522,14 @@ const partyCode =
 
 /*
  * IMPORTANT:
- *
- * Read token from URL first.
+ * Token comes from the URL first.
  */
+
 const urlToken =
     params.get("token");
 
 
-const sessionToken =
+let sessionToken =
     urlToken ||
     localStorage.getItem(
         "backroomsSession"
@@ -537,8 +537,9 @@ const sessionToken =
 
 
 /*
- * Save token if it came from URL.
+ * Save the token immediately.
  */
+
 if (
     urlToken
 ) {
@@ -551,9 +552,6 @@ if (
 }
 
 
-/*
- * Save party code.
- */
 if (
     partyCode
 ) {
@@ -574,7 +572,7 @@ const playerName =
 
 
 /* =========================================================
-   VALIDATE
+   VALIDATION
 ========================================================= */
 
 if (
@@ -592,7 +590,7 @@ if (
     document.getElementById(
         "errorText"
     ).textContent =
-        "Your party session could not be found.";
+        "The game did not receive your party session.";
 
 
     throw new Error(
@@ -606,7 +604,8 @@ if (
    GAME STATE
 ========================================================= */
 
-let ws = null;
+let ws =
+    null;
 
 let connected =
     false;
@@ -635,7 +634,7 @@ let damageCooldown =
 let messageTimer =
     0;
 
-let lastSend =
+let lastPositionSend =
     0;
 
 let yaw =
@@ -657,7 +656,7 @@ const remotePlayers =
 
 
 /* =========================================================
-   UI
+   HUD
 ========================================================= */
 
 document.getElementById(
@@ -668,7 +667,7 @@ document.getElementById(
 
 
 /* =========================================================
-   THREE SCENE
+   THREE
 ========================================================= */
 
 const scene =
@@ -909,9 +908,7 @@ const cols =
     maze[0].length;
 
 
-/* =========================================================
-   FLOOR
-========================================================= */
+/* FLOOR */
 
 const floor =
     new THREE.Mesh(
@@ -942,9 +939,7 @@ scene.add(
 );
 
 
-/* =========================================================
-   CEILING
-========================================================= */
+/* CEILING */
 
 const ceiling =
     new THREE.Mesh(
@@ -975,9 +970,7 @@ scene.add(
 );
 
 
-/* =========================================================
-   WALLS
-========================================================= */
+/* WALLS */
 
 const walls =
     [];
@@ -1066,7 +1059,7 @@ for (
 
 
 /* =========================================================
-   FLUORESCENT LIGHTS
+   LIGHTS
 ========================================================= */
 
 for (
@@ -1365,32 +1358,6 @@ scene.add(
 );
 
 
-const exitLight =
-    new THREE.PointLight(
-
-        0xff1717,
-
-        1.5,
-
-        8
-
-    );
-
-
-exitLight.position.copy(
-    exit.position
-);
-
-
-exitLight.position.y =
-    2.5;
-
-
-scene.add(
-    exitLight
-);
-
-
 /* =========================================================
    MONSTER
 ========================================================= */
@@ -1497,24 +1464,16 @@ const eye2 =
 
 
 eye1.position.set(
-
     -.14,
-
     2.53,
-
     -.39
-
 );
 
 
 eye2.position.set(
-
     .14,
-
     2.53,
-
     -.39
-
 );
 
 
@@ -1544,9 +1503,7 @@ const player =
     new THREE.Vector3(
 
         -50,
-
         1.6,
-
         40
 
     );
@@ -1664,7 +1621,7 @@ window.addEventListener(
 
 
 /* =========================================================
-   MOUSE LOOK
+   MOUSE
 ========================================================= */
 
 renderer.domElement.addEventListener(
@@ -1721,9 +1678,13 @@ document.addEventListener(
 
         pitch =
             THREE.MathUtils.clamp(
+
                 pitch,
+
                 -1.45,
+
                 1.45
+
             );
 
     }
@@ -1734,7 +1695,27 @@ document.addEventListener(
    NETWORK
 ========================================================= */
 
+let reconnectTimer =
+    null;
+
+
 function connectServer() {
+
+    if (
+        ws &&
+        (
+            ws.readyState ===
+                WebSocket.OPEN ||
+
+            ws.readyState ===
+                WebSocket.CONNECTING
+        )
+    ) {
+
+        return;
+
+    }
+
 
     document.getElementById(
         "connectionStatus"
@@ -1760,6 +1741,11 @@ function connectServer() {
             "CONNECTED";
 
 
+        /*
+         * Join the party/game using
+         * the session token from the lobby.
+         */
+
         ws.send(
             JSON.stringify({
 
@@ -1781,73 +1767,76 @@ function connectServer() {
     };
 
 
-    ws.onmessage =
-        event => {
+    ws.onmessage = event => {
 
-            let data;
-
-
-            try {
-
-                data =
-                    JSON.parse(
-                        event.data
-                    );
-
-            } catch {
-
-                return;
-
-            }
+        let data;
 
 
-            handleNetwork(
-                data
-            );
+        try {
 
-        };
+            data =
+                JSON.parse(
+                    event.data
+                );
+
+        } catch {
+
+            return;
+
+        }
 
 
-    ws.onerror =
-        () => {
+        handleNetwork(
+            data
+        );
 
-            connected =
-                false;
+    };
 
+
+    ws.onerror = () => {
+
+        connected =
+            false;
+
+
+        document.getElementById(
+            "connectionStatus"
+        ).textContent =
+            "CONNECTION ERROR";
+
+    };
+
+
+    ws.onclose = () => {
+
+        connected =
+            false;
+
+
+        if (
+            !gameEnded
+        ) {
 
             document.getElementById(
                 "connectionStatus"
             ).textContent =
-                "CONNECTION ERROR";
-
-        };
+                "RECONNECTING...";
 
 
-    ws.onclose =
-        () => {
-
-            connected =
-                false;
+            clearTimeout(
+                reconnectTimer
+            );
 
 
-            if (
-                !gameEnded
-            ) {
-
-                document.getElementById(
-                    "connectionStatus"
-                ).textContent =
-                    "RECONNECTING...";
-
-
+            reconnectTimer =
                 setTimeout(
                     connectServer,
                     2000
                 );
 
-            }
+        }
 
-        };
+    };
 
 }
 
@@ -1874,7 +1863,7 @@ function networkSend(
 
 
 /* =========================================================
-   NETWORK HANDLER
+   NETWORK DATA
 ========================================================= */
 
 function handleNetwork(
@@ -1894,9 +1883,13 @@ function handleNetwork(
             data.token
         ) {
 
+            sessionToken =
+                data.token;
+
+
             localStorage.setItem(
                 "backroomsSession",
-                data.token
+                sessionToken
             );
 
         }
@@ -2033,16 +2026,13 @@ function handleNetwork(
             "Connection error."
         );
 
-
-        return;
-
     }
 
 }
 
 
 /* =========================================================
-   REMOTE PLAYER
+   REMOTE PLAYERS
 ========================================================= */
 
 function createRemotePlayer(
@@ -2127,6 +2117,7 @@ function createRemotePlayer(
     canvas.width =
         512;
 
+
     canvas.height =
         128;
 
@@ -2150,14 +2141,10 @@ function createRemotePlayer(
 
 
     ctx.fillText(
-
         remote.name ||
         "Player",
-
         256,
-
         60
-
     );
 
 
@@ -2234,10 +2221,6 @@ function createRemotePlayer(
 }
 
 
-/* =========================================================
-   REMOTE PLAYER SYNC
-========================================================= */
-
 function syncPlayers(
     players
 ) {
@@ -2285,21 +2268,21 @@ function syncPlayers(
         }
 
 
-        const object =
+        const remotePlayer =
             remotePlayers.get(
                 remote.id
             );
 
 
-        object.targetX =
+        remotePlayer.targetX =
             remote.x || 0;
 
 
-        object.targetY =
+        remotePlayer.targetY =
             remote.y || 1.6;
 
 
-        object.targetZ =
+        remotePlayer.targetZ =
             remote.z || 0;
 
     }
@@ -2308,19 +2291,17 @@ function syncPlayers(
     for (
         const [
             id,
-            object
+            remotePlayer
         ]
         of remotePlayers
     ) {
 
         if (
-            !active.has(
-                id
-            )
+            !active.has(id)
         ) {
 
             scene.remove(
-                object.group
+                remotePlayer.group
             );
 
 
@@ -2343,7 +2324,7 @@ function syncPlayers(
 
 
 /* =========================================================
-   MOVEMENT
+   PLAYER
 ========================================================= */
 
 function updatePlayer(
@@ -2361,7 +2342,6 @@ function updatePlayer(
 
     let forward =
         0;
-
 
     let strafe =
         0;
@@ -2422,8 +2402,8 @@ function updatePlayer(
 
 
     if (
-        moving &&
-        sprinting
+        sprinting &&
+        moving
     ) {
 
         stamina -=
@@ -2441,13 +2421,9 @@ function updatePlayer(
 
     stamina =
         THREE.MathUtils.clamp(
-
             stamina,
-
             0,
-
             100
-
         );
 
 
@@ -2498,10 +2474,8 @@ function updatePlayer(
 
         const movement =
             direction.multiplyScalar(
-
                 speed *
                 delta
-
             );
 
 
@@ -2809,13 +2783,9 @@ function updateMonster(
 
 
             monster.lookAt(
-
                 player.x,
-
                 1.4,
-
                 player.z
-
             );
 
         }
@@ -2825,15 +2795,11 @@ function updateMonster(
 
     const danger =
         THREE.MathUtils.clamp(
-
             1 -
             distance /
             14,
-
             0,
-
             1
-
         );
 
 
@@ -2903,9 +2869,7 @@ function updateObjective() {
     ).textContent =
 
         keyCollected
-
         ? "KEY FOUND — FIND THE EXIT"
-
         : "FIND THE KEY";
 
 }
@@ -2993,7 +2957,7 @@ function updateHUD(
 
 
 /* =========================================================
-   POSITION SYNC
+   SEND POSITION
 ========================================================= */
 
 function sendPosition() {
@@ -3013,7 +2977,7 @@ function sendPosition() {
 
     if (
         now -
-        lastSend <
+        lastPositionSend <
         70
     ) {
 
@@ -3022,7 +2986,7 @@ function sendPosition() {
     }
 
 
-    lastSend =
+    lastPositionSend =
         now;
 
 
@@ -3154,16 +3118,14 @@ window.addEventListener(
    START
 ========================================================= */
 
+updateObjective();
+
 connectServer();
 
 
 const clock =
     new THREE.Clock();
 
-
-/* =========================================================
-   GAME LOOP
-========================================================= */
 
 function animate() {
 
