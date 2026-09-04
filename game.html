@@ -249,6 +249,101 @@ button:hover {
     display: none !important;
 }
 
+
+/* =========================================================
+   HORROR EXPANSION UI
+========================================================= */
+#entityAlert{
+    position:fixed;
+    left:50%;
+    top:27%;
+    transform:translateX(-50%);
+    z-index:16;
+    color:#f3eeee;
+    font-weight:900;
+    letter-spacing:5px;
+    font-size:18px;
+    text-shadow:0 0 12px #000,0 0 24px rgba(180,0,0,.8);
+    opacity:0;
+    transition:opacity .12s;
+    pointer-events:none;
+}
+#sanityBox{
+    position:absolute;
+    right:20px;
+    bottom:25px;
+    width:190px;
+}
+#sanityBox .label{color:#c9c4aa}
+#sanity{
+    background:#8078b8;
+}
+#eventText{
+    position:fixed;
+    left:50%;
+    bottom:15%;
+    transform:translateX(-50%);
+    z-index:17;
+    font-size:13px;
+    color:#d8d5c5;
+    letter-spacing:3px;
+    text-align:center;
+    opacity:0;
+    pointer-events:none;
+    text-shadow:0 2px 7px #000;
+}
+#jumpscare{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#050000;
+    opacity:0;
+    pointer-events:none;
+}
+#jumpscareFace{
+    width:min(42vw,420px);
+    aspect-ratio:1;
+    position:relative;
+    filter:drop-shadow(0 0 35px rgba(255,0,0,.5));
+    transform:scale(.65);
+}
+#jumpscareFace::before,
+#jumpscareFace::after{
+    content:"";
+    position:absolute;
+    top:28%;
+    width:24%;
+    height:16%;
+    background:#fff;
+    border-radius:50%;
+    box-shadow:0 0 35px 8px rgba(255,255,255,.75);
+}
+#jumpscareFace::before{left:16%; transform:rotate(-12deg)}
+#jumpscareFace::after{right:16%; transform:rotate(12deg)}
+#jumpscareMouth{
+    position:absolute;
+    left:19%;
+    right:19%;
+    bottom:17%;
+    height:29%;
+    background:#050000;
+    border:5px solid #eee;
+    border-radius:50% 50% 45% 45%;
+    box-shadow:0 0 30px rgba(255,0,0,.55);
+}
+body.jumpscare #jumpscare{opacity:1}
+body.jumpscare #jumpscareFace{
+    animation:scareFace .42s steps(2,end) infinite;
+}
+@keyframes scareFace{
+    0%{transform:scale(.7) rotate(-2deg)}
+    45%{transform:scale(1.15) rotate(2deg)}
+    100%{transform:scale(1.02) rotate(-1deg)}
+}
+
 </style>
 
 </head>
@@ -306,6 +401,17 @@ button:hover {
         </div>
 
     </div>
+
+    
+<div id="entityAlert">RUN.</div>
+<div id="eventText"></div>
+<div id="sanityBox">
+  <div class="label">SANITY</div>
+  <div class="bar"><div class="fill" id="sanity"></div></div>
+</div>
+<div id="jumpscare">
+  <div id="jumpscareFace"><div id="jumpscareMouth"></div></div>
+</div>
 
     <div id="hint">
         WASD — MOVE<br>
@@ -4570,6 +4676,367 @@ window.addEventListener(
 );
 
 
+
+/* =========================================================
+   HORROR EXPANSION — EXTRA ENTITIES / EVENTS
+   This layer is client-side so it works with the existing
+   multiplayer server without changing party/lobby logic.
+========================================================= */
+let sanity = 100;
+let scareCooldown = 0;
+let eventCooldown = 5;
+let ambientEventTimer = 7;
+let smilerVisibleTimer = 0;
+
+const horrorEntities = [];
+
+function makeEntityMaterial(color, emissive=0x000000, intensity=0){
+    return new THREE.MeshStandardMaterial({
+        color,
+        roughness:.92,
+        metalness:0,
+        emissive,
+        emissiveIntensity:intensity
+    });
+}
+
+function createHorrorEntity(kind, x, z){
+    const g = new THREE.Group();
+    g.userData.kind = kind;
+    g.userData.phase = Math.random()*10;
+    g.userData.speed = kind === "hound" ? 1.65 : kind === "stalker" ? .72 : 0;
+    g.userData.state = "idle";
+    g.userData.attackTimer = 0;
+    g.userData.lastSeen = 0;
+
+    if(kind === "stalker"){
+        const body = new THREE.Mesh(
+            new THREE.CapsuleGeometry(.42,1.45,8,14),
+            makeEntityMaterial(0x050505)
+        );
+        body.position.y=1.3;
+        g.add(body);
+
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(.48,16,16),
+            makeEntityMaterial(0x090909)
+        );
+        head.position.y=2.45;
+        g.add(head);
+
+        const eyeMat=makeEntityMaterial(0xffffff,0xff0000,5);
+        for(const ex of [-.18,.18]){
+            const eye=new THREE.Mesh(new THREE.SphereGeometry(.055,8,8),eyeMat);
+            eye.position.set(ex,2.48,-.43);
+            g.add(eye);
+        }
+    }
+
+    if(kind === "smiler"){
+        const head = new THREE.Mesh(
+            new THREE.SphereGeometry(.9,24,18),
+            makeEntityMaterial(0x020202)
+        );
+        head.position.y=2.15;
+        g.add(head);
+
+        const eyeMat=makeEntityMaterial(0xffffff,0xffffff,8);
+        for(const ex of [-.3,.3]){
+            const eye=new THREE.Mesh(new THREE.SphereGeometry(.13,12,12),eyeMat);
+            eye.position.set(ex,2.3,-.82);
+            g.add(eye);
+        }
+        const mouth=new THREE.Mesh(
+            new THREE.TorusGeometry(.38,.055,8,32,Math.PI),
+            makeEntityMaterial(0xffffff,0xffffff,2)
+        );
+        mouth.rotation.x=Math.PI;
+        mouth.position.set(0,1.92,-.84);
+        g.add(mouth);
+        g.visible=false;
+    }
+
+    if(kind === "hound"){
+        const mat=makeEntityMaterial(0x080808);
+        const torso=new THREE.Mesh(new THREE.BoxGeometry(1.35,.7,1.8),mat);
+        torso.position.y=.75;
+        g.add(torso);
+        const head=new THREE.Mesh(new THREE.BoxGeometry(1.0,.65,.8),mat);
+        head.position.set(0,1.05,-1.0);
+        g.add(head);
+        for(const sx of [-.42,.42]){
+            for(const sz of [-.62,.62]){
+                const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.55,5,8),mat);
+                leg.position.set(sx,.38,sz*.65);
+                g.add(leg);
+            }
+        }
+        const eyeMat=makeEntityMaterial(0xff3333,0xff0000,5);
+        for(const sx of [-.18,.18]){
+            const eye=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),eyeMat);
+            eye.position.set(sx,1.17,-1.38);
+            g.add(eye);
+        }
+    }
+
+    g.position.set(x,0,z);
+    scene.add(g);
+    horrorEntities.push(g);
+    return g;
+}
+
+createHorrorEntity("stalker",-10,-25);
+createHorrorEntity("smiler",35,0);
+createHorrorEntity("hound",10,25);
+
+function distance2D(a,b){
+    const dx=a.x-b.x, dz=a.z-b.z;
+    return Math.sqrt(dx*dx+dz*dz);
+}
+
+function hasLineOfSight(from,to){
+    const origin=from.clone();
+    origin.y=1.6;
+    const target=to.clone();
+    target.y=1.6;
+    const dir=target.sub(origin);
+    const dist=dir.length();
+    if(dist<=.1) return true;
+    dir.normalize();
+    const ray=new THREE.Raycaster(origin,dir,0,dist);
+    const hits=ray.intersectObjects(walls,false);
+    return hits.length===0;
+}
+
+function entityFacingPlayer(entity){
+    const toPlayer=new THREE.Vector3(
+        player.x-entity.position.x,
+        0,
+        player.z-entity.position.z
+    );
+    if(toPlayer.lengthSq()<.01) return true;
+    toPlayer.normalize();
+    const forward=new THREE.Vector3(0,0,-1).applyQuaternion(entity.quaternion);
+    forward.y=0;
+    forward.normalize();
+    return forward.dot(toPlayer)>.25;
+}
+
+function horrorSound(freq=90,duration=.22,volume=.18,type="sawtooth"){
+    if(!audioContext || !masterGain) return;
+    try{
+        const osc=audioContext.createOscillator();
+        const gain=audioContext.createGain();
+        osc.type=type;
+        osc.frequency.setValueAtTime(freq,audioContext.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(25,freq*.45),audioContext.currentTime+duration);
+        gain.gain.setValueAtTime(.001,audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(volume,audioContext.currentTime+.025);
+        gain.gain.exponentialRampToValueAtTime(.001,audioContext.currentTime+duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+        osc.stop(audioContext.currentTime+duration+.02);
+    }catch{}
+}
+
+function showEvent(text, seconds=2.5){
+    const el=document.getElementById("eventText");
+    el.textContent=text;
+    el.style.opacity="1";
+    clearTimeout(showEvent._timer);
+    showEvent._timer=setTimeout(()=>el.style.opacity="0",seconds*1000);
+}
+
+function triggerJumpscare(kind){
+    if(gameEnded || scareCooldown>0) return;
+    scareCooldown=4;
+    const alert=document.getElementById("entityAlert");
+    alert.textContent=kind==="smiler" ? "DON'T LOOK AWAY." : "RUN.";
+    alert.style.opacity="1";
+    document.body.classList.add("jumpscare");
+    shakeAmount=.65;
+    horrorSound(kind==="hound"?48:kind==="smiler"?210:72,.6,.42,"sawtooth");
+    setTimeout(()=>{
+        document.body.classList.remove("jumpscare");
+        alert.style.opacity="0";
+    },650);
+
+    health=Math.max(0,health-(kind==="hound"?45:30));
+    sanity=Math.max(0,sanity-35);
+    if(health<=0){
+        networkSend({type:"gameOver",name:playerName});
+    }
+}
+
+function updateSanity(delta,nearest){
+    const danger=nearest===Infinity?0:THREE.MathUtils.clamp(1-nearest/38,0,1);
+    const flashlightPenalty=flashlightOn?0:0.08;
+    sanity += (danger>.18 ? -delta*(3.2+danger*5) : delta*1.4);
+    sanity -= flashlightPenalty*delta;
+    sanity=THREE.MathUtils.clamp(sanity,0,100);
+    document.getElementById("sanity").style.width=sanity+"%";
+    if(sanity<25 && Math.random()<delta*.55){
+        showEvent("YOU FEEL LIKE SOMETHING IS WATCHING YOU.");
+    }
+}
+
+function moveEntityToward(entity,target,speed,delta){
+    const dir=new THREE.Vector3(
+        target.x-entity.position.x,
+        0,
+        target.z-entity.position.z
+    );
+    if(dir.lengthSq()<.001) return;
+    dir.normalize();
+    const nx=entity.position.x+dir.x*speed*delta;
+    const nz=entity.position.z+dir.z*speed*delta;
+    if(!collides(new THREE.Vector3(nx,1.6,nz))){
+        entity.position.x=nx;
+        entity.position.z=nz;
+    }else{
+        // Slide around corners instead of getting permanently stuck.
+        const sx=entity.position.x+dir.x*speed*delta;
+        if(!collides(new THREE.Vector3(sx,1.6,entity.position.z))) entity.position.x=sx;
+        const sz=entity.position.z+dir.z*speed*delta;
+        if(!collides(new THREE.Vector3(entity.position.x,1.6,sz))) entity.position.z=sz;
+    }
+    entity.lookAt(player.x,entity.position.y+1.1,player.z);
+}
+
+function updateExtraEntities(delta){
+    if(gameEnded) return;
+    scareCooldown=Math.max(0,scareCooldown-delta);
+    eventCooldown=Math.max(0,eventCooldown-delta);
+
+    let nearest=Infinity;
+
+    for(const entity of horrorEntities){
+        const kind=entity.userData.kind;
+        const d=distance2D(entity.position,player);
+        nearest=Math.min(nearest,d);
+        entity.userData.attackTimer=Math.max(0,entity.userData.attackTimer-delta);
+        entity.userData.phase+=delta;
+
+        if(kind==="smiler"){
+            // The Smiler exists mainly as a flashlight-off encounter.
+            const active=!flashlightOn && d<31 && hasLineOfSight(entity.position,player);
+            entity.visible=active;
+            if(active){
+                smilerVisibleTimer+=delta;
+                entity.position.y=Math.sin(entity.userData.phase*1.8)*.04;
+                if(d<8 && entityFacingPlayer(entity) && smilerVisibleTimer>1.2){
+                    triggerJumpscare("smiler");
+                    smilerVisibleTimer=0;
+                }
+            }else{
+                smilerVisibleTimer=0;
+            }
+            continue;
+        }
+
+        if(kind==="stalker"){
+            const seen=hasLineOfSight(entity.position,player) && d<34;
+            if(seen || d<10){
+                entity.userData.state="chase";
+                entity.userData.lastSeen=2.5;
+            }else{
+                entity.userData.lastSeen=Math.max(0,entity.userData.lastSeen-delta);
+            }
+            if(entity.userData.lastSeen>0){
+                const speed=entity.userData.speed*(d<13?1.55:1);
+                moveEntityToward(entity,player,speed,delta);
+            }else{
+                // Slow wandering keeps the entity from feeling like a stationary prop.
+                const a=entity.userData.phase*.23;
+                const target=new THREE.Vector3(
+                    entity.position.x+Math.cos(a)*4,
+                    0,
+                    entity.position.z+Math.sin(a)*4
+                );
+                if(!collides(new THREE.Vector3(target.x,1.6,target.z)))
+                    entity.lookAt(target.x,entity.position.y,target.z);
+            }
+        }
+
+        if(kind==="hound"){
+            if(d<23){
+                moveEntityToward(entity,player,entity.userData.speed*(d<9?1.45:1),delta);
+            }else{
+                const a=entity.userData.phase*.55;
+                entity.rotation.y+=Math.sin(a)*delta*.35;
+            }
+            if(d<2.0 && entity.userData.attackTimer<=0){
+                entity.userData.attackTimer=2.0;
+                triggerJumpscare("hound");
+            }
+        }
+
+        if(d<2.2 && entity.userData.attackTimer<=0 && kind==="stalker"){
+            entity.userData.attackTimer=1.3;
+            health=Math.max(0,health-18);
+            sanity=Math.max(0,sanity-12);
+            shakeAmount=.18;
+            showMessage("IT TOUCHED YOU");
+            horrorSound(55,.25,.2);
+            if(health<=0) networkSend({type:"gameOver",name:playerName});
+        }
+    }
+
+    updateSanity(delta,nearest);
+
+    // Environmental encounters: lights can die and the player gets a warning.
+    ambientEventTimer-=delta;
+    if(ambientEventTimer<=0){
+        ambientEventTimer=12+Math.random()*18;
+        const roll=Math.random();
+        if(roll<.42){
+            flickerTimer=.9+Math.random()*1.8;
+            showEvent("THE LIGHTS ARE FLICKERING...");
+            horrorSound(38,.35,.06,"square");
+        }else if(roll<.72){
+            showEvent(Math.random()<.5 ? "DID YOU HEAR THAT?" : "KEEP MOVING.");
+            horrorSound(120,.12,.035);
+        }else{
+            // Briefly make a distant entity visible at the edge of the player's world.
+            const e=horrorEntities[Math.floor(Math.random()*horrorEntities.length)];
+            if(e && e.userData.kind!=="smiler"){
+                const old=e.visible;
+                e.visible=true;
+                setTimeout(()=>{if(e.userData.kind!=="smiler") e.visible=old;},900);
+                showEvent("SOMETHING MOVED IN THE DARK.");
+            }
+        }
+    }
+
+    if(flickerTimer>0){
+        flickerTimer-=delta;
+        if(Math.random()<.42){
+            for(const item of ceilingLights){
+                if(Math.random()<.35) item.light.visible=!item.light.visible;
+            }
+        }
+        if(flickerTimer<=0){
+            for(const item of ceilingLights) item.light.visible=true;
+        }
+    }
+
+    // Low sanity makes the world feel less trustworthy.
+    scene.fog.density=.017 + (100-sanity)*.000035;
+}
+
+function updateHorrorEvents(delta){
+    // subtle screen breathing at very low sanity
+    if(!gameEnded && sanity<18){
+        camera.fov=76+Math.sin(performance.now()*.002)*1.8;
+        camera.updateProjectionMatrix();
+    }else if(camera.fov!==76){
+        camera.fov=76;
+        camera.updateProjectionMatrix();
+    }
+}
+
+
 /* =========================================================
    START
 ========================================================= */
@@ -4617,6 +5084,13 @@ function animate() {
 
 
     updateMonster(
+        delta
+    );
+    updateExtraEntities(
+        delta
+    );
+
+    updateHorrorEvents(
         delta
     );
 
