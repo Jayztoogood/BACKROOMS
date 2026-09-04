@@ -1,11 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>THE BACKROOMS</title>
 
 <style>
+
 * {
     box-sizing: border-box;
 }
@@ -73,8 +76,11 @@ body {
 
 h1 {
     margin: 0;
+
     font-size: 52px;
+
     letter-spacing: 7px;
+
     color: #ddd78b;
 
     text-shadow:
@@ -83,22 +89,29 @@ h1 {
 
 .subtitle {
     margin: 8px 0 30px;
+
     color: #aaa;
+
     letter-spacing: 3px;
+
     font-size: 12px;
 }
 
 input {
     width: 100%;
+
     padding: 15px;
+
     margin-bottom: 12px;
 
     border: 1px solid #77704a;
 
     background: #16150d;
+
     color: white;
 
     font-size: 16px;
+
     outline: none;
 }
 
@@ -108,15 +121,19 @@ input:focus {
 
 button {
     width: 100%;
+
     padding: 15px;
+
     margin-top: 10px;
 
     border: 0;
 
     background: #b9ae57;
+
     color: #15140b;
 
     font-size: 16px;
+
     font-weight: bold;
 
     cursor: pointer;
@@ -150,7 +167,9 @@ button:disabled {
 
 .code {
     font-size: 42px;
+
     font-weight: bold;
+
     letter-spacing: 10px;
 
     color: #eee9a3;
@@ -160,19 +179,23 @@ button:disabled {
 
 .small {
     color: #999;
+
     font-size: 13px;
 }
 
 .players {
     margin: 25px 0;
+
     text-align: left;
 }
 
 .player {
     display: flex;
+
     justify-content: space-between;
 
     padding: 11px 12px;
+
     margin-bottom: 5px;
 
     background: rgba(255,255,255,.05);
@@ -185,21 +208,29 @@ button:disabled {
 #error,
 #partyError {
     color: #ff7777;
+
     min-height: 20px;
+
     margin-top: 12px;
+
     font-size: 14px;
 }
 
 .status {
     margin-top: 15px;
+
     font-size: 12px;
+
     color: #777;
 }
 
+/* HOST BUTTON */
 #startBtn {
     display: none;
 }
+
 </style>
+
 </head>
 
 <body>
@@ -212,7 +243,9 @@ button:disabled {
 
     <div class="panel" id="menu">
 
-        <h1>THE BACKROOMS</h1>
+        <h1>
+            THE BACKROOMS
+        </h1>
 
         <div class="subtitle">
             THERE IS NO EXIT
@@ -294,9 +327,13 @@ button:disabled {
             id="players"
         ></div>
 
+
+        <!-- HOST ONLY -->
+
         <button id="startBtn">
             START GAME
         </button>
+
 
         <button
             id="leaveBtn"
@@ -314,6 +351,10 @@ button:disabled {
 
 <script>
 
+/* =========================================================
+   SERVER
+========================================================= */
+
 const SERVER =
     "wss://backrooms-avnx.onrender.com";
 
@@ -325,21 +366,31 @@ const SERVER =
 let ws = null;
 
 let playerName =
-    localStorage.getItem("playerName") || "";
+    localStorage.getItem(
+        "playerName"
+    ) || "";
 
 let sessionToken =
-    localStorage.getItem("backroomsSession") || "";
+    localStorage.getItem(
+        "backroomsSession"
+    ) || "";
 
 let partyCode =
-    localStorage.getItem("partyCode") || "";
+    localStorage.getItem(
+        "partyCode"
+    ) || "";
 
-let isHost = false;
+let isHost =
+    false;
 
-let leaving = false;
+let leaving =
+    false;
 
-let gameStarting = false;
+let gameStarting =
+    false;
 
-let partyStatusTimer = null;
+let partyStatusTimer =
+    null;
 
 
 /* =========================================================
@@ -347,40 +398,59 @@ let partyStatusTimer = null;
 ========================================================= */
 
 const menu =
-    document.getElementById("menu");
+    document.getElementById(
+        "menu"
+    );
 
 const party =
-    document.getElementById("party");
+    document.getElementById(
+        "party"
+    );
 
 const nameInput =
-    document.getElementById("name");
+    document.getElementById(
+        "name"
+    );
 
 const codeInput =
-    document.getElementById("codeInput");
+    document.getElementById(
+        "codeInput"
+    );
 
 const joinBox =
-    document.getElementById("joinBox");
+    document.getElementById(
+        "joinBox"
+    );
 
 const error =
-    document.getElementById("error");
+    document.getElementById(
+        "error"
+    );
 
 const partyError =
-    document.getElementById("partyError");
+    document.getElementById(
+        "partyError"
+    );
 
 const connectionStatus =
-    document.getElementById("connectionStatus");
+    document.getElementById(
+        "connectionStatus"
+    );
 
 const partyCodeElement =
-    document.getElementById("partyCode");
+    document.getElementById(
+        "partyCode"
+    );
 
 const playersElement =
-    document.getElementById("players");
+    document.getElementById(
+        "players"
+    );
 
 const startBtn =
-    document.getElementById("startBtn");
-
-const leaveBtn =
-    document.getElementById("leaveBtn");
+    document.getElementById(
+        "startBtn"
+    );
 
 
 nameInput.value =
@@ -425,8 +495,8 @@ function connect() {
 
 
         /*
-         * If a valid party session already
-         * exists, reconnect to it.
+         * Reconnect to existing party if
+         * the browser has a saved session.
          */
 
         if (
@@ -542,7 +612,7 @@ function send(
 
 
 /* =========================================================
-   PARTY STATUS
+   PARTY STATUS CHECK
 ========================================================= */
 
 function checkParty() {
@@ -574,9 +644,9 @@ function checkParty() {
 }
 
 
-function startStatusChecking() {
+function startPartyChecking() {
 
-    stopStatusChecking();
+    stopPartyChecking();
 
 
     checkParty();
@@ -591,7 +661,7 @@ function startStatusChecking() {
 }
 
 
-function stopStatusChecking() {
+function stopPartyChecking() {
 
     if (
         partyStatusTimer
@@ -617,6 +687,7 @@ function handleMessage(
     data
 ) {
 
+
     /* SESSION */
 
     if (
@@ -639,7 +710,9 @@ function handleMessage(
 
         }
 
+
         return;
+
     }
 
 
@@ -693,7 +766,7 @@ function handleMessage(
             "START GAME";
 
 
-        startStatusChecking();
+        startPartyChecking();
 
 
         return;
@@ -735,7 +808,8 @@ function handleMessage(
 
 
         isHost =
-            data.host === true;
+            data.host ===
+            true;
 
 
         showParty();
@@ -756,7 +830,7 @@ function handleMessage(
         }
 
 
-        startStatusChecking();
+        startPartyChecking();
 
 
         return;
@@ -764,7 +838,7 @@ function handleMessage(
     }
 
 
-    /* LOBBY UPDATE */
+    /* LOBBY */
 
     if (
         data.type ===
@@ -778,7 +852,6 @@ function handleMessage(
             partyCode =
                 data.code;
 
-
             partyCodeElement.textContent =
                 data.code;
 
@@ -786,12 +859,14 @@ function handleMessage(
 
 
         updatePlayers(
-            data.players || []
+            data.players ||
+            []
         );
 
 
         if (
-            data.youAreHost === true
+            data.youAreHost ===
+            true
         ) {
 
             isHost =
@@ -813,8 +888,7 @@ function handleMessage(
 
 
         if (
-            isHost &&
-            !gameStarting
+            isHost
         ) {
 
             startBtn.style.display =
@@ -825,6 +899,11 @@ function handleMessage(
 
             startBtn.textContent =
                 "START GAME";
+
+        } else {
+
+            startBtn.style.display =
+                "none";
 
         }
 
@@ -874,32 +953,18 @@ function handleMessage(
 
 
         /*
-         * Fallback:
-         * If the friend missed gameStarted,
-         * this still starts the game.
+         * This is the fallback that makes
+         * the friend enter even if their
+         * browser missed gameStarted.
          */
 
         if (
-            data.started
+            data.started ===
+            true
         ) {
 
-            if (
-                data.token
-            ) {
+            stopPartyChecking();
 
-                sessionToken =
-                    data.token;
-
-
-                localStorage.setItem(
-                    "backroomsSession",
-                    sessionToken
-                );
-
-            }
-
-
-            stopStatusChecking();
 
             goToGame();
 
@@ -950,7 +1015,8 @@ function handleMessage(
         }
 
 
-        stopStatusChecking();
+        stopPartyChecking();
+
 
         goToGame();
 
@@ -977,14 +1043,15 @@ function handleMessage(
 
 
         if (
-            message.toLowerCase()
-                .includes("session")
+            message
+                .toLowerCase()
+                .includes(
+                    "session"
+                )
         ) {
 
-            /*
-             * The session really is gone.
-             */
-            sessionToken = "";
+            sessionToken =
+                "";
 
             localStorage.removeItem(
                 "backroomsSession"
@@ -993,20 +1060,16 @@ function handleMessage(
         }
 
 
-        if (
-            gameStarting
-        ) {
+        gameStarting =
+            false;
 
-            gameStarting =
-                false;
 
-            startBtn.disabled =
-                false;
+        startBtn.disabled =
+            false;
 
-            startBtn.textContent =
-                "START GAME";
 
-        }
+        startBtn.textContent =
+            "START GAME";
 
 
         return;
@@ -1017,7 +1080,7 @@ function handleMessage(
 
 
 /* =========================================================
-   SHOW PARTY
+   PARTY SCREEN
 ========================================================= */
 
 function showParty() {
@@ -1026,9 +1089,11 @@ function showParty() {
         "hidden"
     );
 
+
     party.classList.remove(
         "hidden"
     );
+
 
     partyCodeElement.textContent =
         partyCode;
@@ -1037,21 +1102,16 @@ function showParty() {
 
 
 /* =========================================================
-   GO TO GAME
+   ENTER GAME
 ========================================================= */
 
 function goToGame() {
 
     if (
-        gameStarting === true
+        gameStarting
     ) {
 
-        /*
-         * This is still allowed.
-         * It simply prevents duplicate
-         * redirects once the redirect
-         * has already happened.
-         */
+        return;
 
     }
 
@@ -1075,18 +1135,6 @@ function goToGame() {
         partyError.textContent =
             "Game session is missing.";
 
-        gameStarting =
-            false;
-
-
-        startBtn.disabled =
-            false;
-
-
-        startBtn.textContent =
-            "START GAME";
-
-
         return;
 
     }
@@ -1096,7 +1144,7 @@ function goToGame() {
         true;
 
 
-    stopStatusChecking();
+    stopPartyChecking();
 
 
     const url =
@@ -1270,10 +1318,6 @@ document.getElementById(
     );
 
 
-    /*
-     * Creating a party makes us host.
-     */
-
     isHost =
         true;
 
@@ -1302,11 +1346,9 @@ document.getElementById(
     error.textContent =
         "";
 
-
     joinBox.classList.remove(
         "hidden"
     );
-
 
     codeInput.focus();
 
@@ -1314,7 +1356,7 @@ document.getElementById(
 
 
 /* =========================================================
-   JOIN
+   JOIN PARTY
 ========================================================= */
 
 document.getElementById(
@@ -1351,7 +1393,8 @@ document.getElementById(
 
 
     if (
-        code.length !== 5
+        code.length !==
+        5
     ) {
 
         error.textContent =
@@ -1468,13 +1511,15 @@ startBtn.onclick = () => {
    LEAVE
 ========================================================= */
 
-leaveBtn.onclick = () => {
+document.getElementById(
+    "leaveBtn"
+).onclick = () => {
 
     leaving =
         true;
 
 
-    stopStatusChecking();
+    stopPartyChecking();
 
 
     localStorage.removeItem(
@@ -1505,7 +1550,7 @@ leaveBtn.onclick = () => {
 
 
 /* =========================================================
-   ENTER
+   ENTER KEY
 ========================================================= */
 
 nameInput.addEventListener(
