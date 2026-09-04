@@ -1,0 +1,12 @@
+{
+  "name": "the-backrooms-multiplayer",
+  "version": "1.0.0",
+  "description": "Multiplayer Backrooms horror game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  }
+}
