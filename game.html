@@ -1,16 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0"
->
-
-<title>THE BACKROOMS — LEVEL 0</title>
+<title>THE BACKROOMS</title>
 
 <style>
 
@@ -24,249 +19,165 @@ body {
     width: 100%;
     height: 100%;
     overflow: hidden;
-
-    background: #111;
+    background: #000;
+    font-family: Arial, sans-serif;
 }
 
-body {
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-canvas {
-    display: block;
+#game {
+    position: fixed;
+    inset: 0;
 }
 
 #hud {
     position: fixed;
-
     inset: 0;
-
     pointer-events: none;
-
-    z-index: 10;
-
     color: white;
+    text-shadow: 0 2px 4px #000;
 }
 
-#topLeft {
+#healthBox {
     position: absolute;
-
-    top: 20px;
     left: 20px;
-
-    width: 220px;
+    bottom: 25px;
+    width: 230px;
 }
 
-.hudTitle {
-    color: #e3d879;
-
-    font-size: 18px;
-
-    font-weight: bold;
-
-    letter-spacing: 4px;
-
-    text-shadow:
-        0 2px 8px black;
-}
-
-.hudText {
-    margin-top: 8px;
-
-    color: #bbb;
-
+.label {
     font-size: 12px;
-
-    letter-spacing: 1px;
+    margin-bottom: 5px;
+    letter-spacing: 2px;
 }
 
 .bar {
-    width: 200px;
-
-    height: 9px;
-
-    margin-top: 8px;
-
-    background: rgba(0,0,0,.7);
-
-    border: 1px solid rgba(255,255,255,.2);
+    height: 17px;
+    background: rgba(0,0,0,.65);
+    border: 1px solid rgba(255,255,255,.3);
+    margin-bottom: 10px;
 }
 
-.barInner {
+.fill {
     height: 100%;
-
     width: 100%;
+    transition: width .15s;
 }
 
-#healthBar {
-    background: #b83b32;
+#health {
+    background: #c93333;
 }
 
-#staminaBar {
-    background: #d8c95c;
+#stamina {
+    background: #d1c95c;
 }
 
 #objective {
     position: absolute;
-
     top: 20px;
-
-    right: 20px;
-
-    padding: 15px;
-
-    width: 240px;
-
-    background: rgba(0,0,0,.5);
-
-    border: 1px solid rgba(255,255,255,.1);
-
-    text-align: right;
-
-    color: #ddd;
-
-    font-size: 12px;
-
-    line-height: 1.6;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-align: center;
 }
 
-#bottom {
+#playersHUD {
     position: absolute;
-
-    bottom: 25px;
-
-    left: 50%;
-
-    transform: translateX(-50%);
-
-    text-align: center;
-
-    color: rgba(255,255,255,.55);
-
-    font-size: 11px;
-
-    letter-spacing: 2px;
+    top: 20px;
+    right: 20px;
+    text-align: right;
+    font-size: 13px;
 }
 
 #crosshair {
     position: absolute;
-
-    left: 50%;
     top: 50%;
-
+    left: 50%;
+    width: 8px;
+    height: 8px;
     transform: translate(-50%, -50%);
-
-    width: 5px;
-    height: 5px;
-
+    border: 1px solid white;
     border-radius: 50%;
+}
 
-    background: white;
+#hint {
+    position: absolute;
+    bottom: 25px;
+    right: 25px;
+    font-size: 12px;
+    color: #ddd;
+    text-align: right;
+}
 
-    box-shadow:
-        0 0 4px black;
+#flashlightText {
+    position: absolute;
+    top: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    opacity: .7;
 }
 
 #message {
-    position: absolute;
-
+    position: fixed;
     left: 50%;
-    top: 62%;
-
-    transform: translateX(-50%);
-
-    color: #e5dc8a;
-
-    font-size: 14px;
-
-    letter-spacing: 2px;
-
-    text-shadow:
-        0 2px 8px black;
-
-    opacity: 0;
-
-    transition: opacity .2s;
-}
-
-#blackout {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 20;
-
-    display: none;
-
-    align-items: center;
-
-    justify-content: center;
-
-    flex-direction: column;
-
-    background: rgba(0,0,0,.96);
-
+    top: 42%;
+    transform: translate(-50%, -50%);
     color: white;
-
+    font-size: 24px;
     text-align: center;
-}
-
-#blackout h1 {
-    margin: 0;
-
-    color: #ddd;
-
-    font-size: 48px;
-
-    letter-spacing: 8px;
-}
-
-#blackout p {
-    color: #777;
-
-    letter-spacing: 3px;
-}
-
-#blackout button {
-    pointer-events: auto;
-
-    padding: 15px 30px;
-
-    background: transparent;
-
-    color: white;
-
-    border: 1px solid #777;
-
-    cursor: pointer;
-}
-
-#damage {
-    position: fixed;
-
-    inset: 0;
-
-    z-index: 15;
-
+    text-shadow: 0 3px 10px black;
     pointer-events: none;
-
-    background: rgba(180,0,0,.35);
-
-    opacity: 0;
 }
 
-#partyInfo {
-    position: absolute;
+#startScreen,
+#endScreen {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
 
-    bottom: 20px;
+.panel {
+    width: 450px;
+    max-width: 90%;
+    background: rgba(18,17,8,.95);
+    border: 1px solid #77704b;
+    color: white;
+    text-align: center;
+    padding: 35px;
+}
 
-    right: 20px;
+.panel h1 {
+    letter-spacing: 5px;
+    margin-top: 0;
+}
 
-    color: #777;
+.panel p {
+    color: #aaa;
+    line-height: 1.6;
+}
 
-    font-size: 10px;
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    background: #c0b55e;
+    color: #111;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+}
 
-    letter-spacing: 2px;
+button:hover {
+    background: #ddd273;
+}
+
+.hidden {
+    display: none !important;
 }
 
 </style>
@@ -275,120 +186,171 @@ canvas {
 
 <body>
 
+<div id="game"></div>
+
 <div id="hud">
 
-    <div id="topLeft">
-
-        <div class="hudTitle">
-            LEVEL 0
-        </div>
-
-        <div class="hudText">
-            HEALTH
-        </div>
-
-        <div class="bar">
-            <div
-                id="healthBar"
-                class="barInner"
-            ></div>
-        </div>
-
-        <div class="hudText">
-            STAMINA
-        </div>
-
-        <div class="bar">
-            <div
-                id="staminaBar"
-                class="barInner"
-            ></div>
-        </div>
-
-    </div>
-
     <div id="objective">
-        FIND THE EXIT.<br>
-        DON'T LET IT FIND YOU.
+        FIND THE KEY
     </div>
+
+    <div id="flashlightText">
+        FLASHLIGHT: ON
+    </div>
+
+    <div id="playersHUD"></div>
 
     <div id="crosshair"></div>
 
     <div id="message"></div>
 
-    <div id="bottom">
-        WASD — MOVE &nbsp;&nbsp; SHIFT — SPRINT &nbsp;&nbsp;
-        F — FLASHLIGHT &nbsp;&nbsp; ESC — RELEASE MOUSE
+    <div id="healthBox">
+
+        <div class="label">HEALTH</div>
+
+        <div class="bar">
+            <div class="fill" id="health"></div>
+        </div>
+
+        <div class="label">STAMINA</div>
+
+        <div class="bar">
+            <div class="fill" id="stamina"></div>
+        </div>
+
     </div>
 
-    <div id="partyInfo"></div>
+    <div id="hint">
+        WASD — MOVE<br>
+        SHIFT — SPRINT<br>
+        F — FLASHLIGHT<br>
+        ESC — RELEASE MOUSE
+    </div>
 
 </div>
 
-<div id="damage"></div>
+<div id="startScreen">
 
-<div id="blackout">
+    <div class="panel">
 
-    <h1 id="endTitle">
-        YOU DIED
-    </h1>
+        <h1>THE BACKROOMS</h1>
 
-    <p id="endText">
-        THE BACKROOMS HAVE CLAIMED YOU.
-    </p>
+        <p>
+            You don't remember how you got here.
+            <br><br>
+            Find the key.
+            <br>
+            Find the exit.
+            <br>
+            Don't let it find you.
+        </p>
 
-    <button onclick="location.href='index.html'">
-        RETURN TO MENU
-    </button>
+        <button id="playButton">
+            ENTER THE BACKROOMS
+        </button>
+
+    </div>
 
 </div>
 
+<div id="endScreen" class="hidden">
 
-<script type="importmap">
-{
-    "imports": {
-        "three":
-        "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
-    }
-}
-</script>
+    <div class="panel">
 
+        <h1 id="endTitle">GAME OVER</h1>
+
+        <p id="endText"></p>
+
+        <button onclick="location.href='index.html'">
+            RETURN TO MENU
+        </button>
+
+    </div>
+
+</div>
 
 <script type="module">
 
-import * as THREE from "three";
+import * as THREE
+from "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 
+const SERVER = "wss://backrooms-avnx.onrender.com";
 
-// ============================================================
-// BASIC SETUP
-// ============================================================
+const params = new URLSearchParams(location.search);
 
-const scene =
-    new THREE.Scene();
+const partyCode =
+    params.get("party") ||
+    localStorage.getItem("partyCode");
 
-scene.background =
-    new THREE.Color(0x15130a);
+const sessionToken =
+    localStorage.getItem("backroomsSession");
 
-scene.fog =
-    new THREE.FogExp2(
-        0x1d1a0d,
-        0.035
-    );
+const playerName =
+    localStorage.getItem("playerName") ||
+    "Player";
 
+if (!partyCode || !sessionToken) {
 
-const camera =
-    new THREE.PerspectiveCamera(
-        75,
-        innerWidth / innerHeight,
-        0.05,
-        200
-    );
+    location.href = "index.html";
 
+}
 
-const renderer =
-    new THREE.WebGLRenderer({
-        antialias: true
-    });
+let ws;
+
+let connected = false;
+
+let health = 100;
+
+let stamina = 100;
+
+let flashlightOn = true;
+
+let gameEnded = false;
+
+let keyCollected = false;
+
+let lastSent = 0;
+
+let damageCooldown = 0;
+
+const remotePlayers = new Map();
+
+const keys = {};
+
+const clock = new THREE.Clock();
+
+let yaw = 0;
+
+let pitch = 0;
+
+let canLook = false;
+
+/* --------------------------------------------------
+   THREE.JS
+-------------------------------------------------- */
+
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0xaaa65f);
+
+scene.fog = new THREE.Fog(
+    0xaaa65f,
+    12,
+    85
+);
+
+const camera = new THREE.PerspectiveCamera(
+    75,
+    innerWidth / innerHeight,
+    .1,
+    200
+);
+
+camera.rotation.order = "YXZ";
+
+const renderer = new THREE.WebGLRenderer({
+    antialias: true
+});
 
 renderer.setSize(
     innerWidth,
@@ -396,1802 +358,1083 @@ renderer.setSize(
 );
 
 renderer.setPixelRatio(
-    Math.min(
-        devicePixelRatio,
-        2
-    )
+    Math.min(devicePixelRatio, 2)
 );
 
 renderer.shadowMap.enabled = true;
 
-renderer.shadowMap.type =
-    THREE.PCFSoftShadowMap;
+document
+    .getElementById("game")
+    .appendChild(renderer.domElement);
 
-document.body.appendChild(
-    renderer.domElement
+/* --------------------------------------------------
+   LIGHTING
+-------------------------------------------------- */
+
+const ambient = new THREE.HemisphereLight(
+    0xfff4bb,
+    0x332c10,
+    1.1
 );
-
-
-// ============================================================
-// LIGHTING
-// ============================================================
-
-const ambient =
-    new THREE.HemisphereLight(
-        0xfff0a0,
-        0x111111,
-        0.7
-    );
 
 scene.add(ambient);
 
-
-const playerLight =
-    new THREE.SpotLight(
-        0xfff7c5,
-        7,
-        25,
-        Math.PI / 6,
-        .5,
-        1
-    );
-
-playerLight.castShadow = true;
-
-playerLight.shadow.mapSize.width =
-    1024;
-
-playerLight.shadow.mapSize.height =
-    1024;
-
-scene.add(playerLight);
-
-const flashlightTarget =
-    new THREE.Object3D();
-
-scene.add(
-    flashlightTarget
+const flashlight = new THREE.SpotLight(
+    0xffffff,
+    80,
+    30,
+    Math.PI / 7,
+    .5,
+    1
 );
 
-playerLight.target =
-    flashlightTarget;
+flashlight.position.set(
+    0,
+    1.6,
+    0
+);
 
+flashlight.castShadow = true;
 
-// ============================================================
-// WORLD
-// ============================================================
+camera.add(flashlight);
 
-const WORLD_SIZE = 120;
+scene.add(camera);
 
-const CELL = 6;
-
-const wallHeight = 4.5;
-
-const wallThickness = .35;
-
+/* --------------------------------------------------
+   MATERIALS
+-------------------------------------------------- */
 
 const wallMaterial =
     new THREE.MeshStandardMaterial({
-        color: 0xb6aa48,
-        roughness: .9
+        color: 0xaaa35d,
+        roughness: 1
     });
 
 const floorMaterial =
     new THREE.MeshStandardMaterial({
-        color: 0x8f8639,
+        color: 0x817a46,
         roughness: 1
     });
 
 const ceilingMaterial =
     new THREE.MeshStandardMaterial({
-        color: 0xaaa04d,
-        roughness: .9
+        color: 0xd0c983,
+        roughness: 1
     });
 
-
-// floor
-
-const floor =
-    new THREE.Mesh(
-        new THREE.PlaneGeometry(
-            WORLD_SIZE,
-            WORLD_SIZE
-        ),
-        floorMaterial
-    );
-
-floor.rotation.x =
-    -Math.PI / 2;
-
-floor.receiveShadow = true;
-
-scene.add(floor);
-
-
-// ceiling
-
-const ceiling =
-    new THREE.Mesh(
-        new THREE.PlaneGeometry(
-            WORLD_SIZE,
-            WORLD_SIZE
-        ),
-        ceilingMaterial
-    );
-
-ceiling.rotation.x =
-    Math.PI / 2;
-
-ceiling.position.y =
-    wallHeight;
-
-scene.add(ceiling);
-
-
-// ============================================================
-// MAZE
-// ============================================================
+/* --------------------------------------------------
+   WORLD
+-------------------------------------------------- */
 
 const walls = [];
 
-const wallBoxes = [];
+const CELL = 6;
 
+const maze = [
 
-// deterministic maze
+"#########################",
+"#........#..............#",
+"#........#..............#",
+"#........#..............#",
+"#........#..............#",
+"#........#####.##########",
+"#.......................#",
+"#.####################..#",
+"#.......................#",
+"#........###########....#",
+"#........#..............#",
+"#........#..............#",
+"#........#..............#",
+"##########..............#",
+"#.......................#",
+"#....#################..#",
+"#.......................#",
+"#.......................#",
+"#########################"
 
-function randomSeeded(seed) {
+];
 
-    let x = Math.sin(seed++) * 10000;
+const rows = maze.length;
+const cols = maze[0].length;
 
-    return x - Math.floor(x);
-}
+const worldWidth =
+    cols * CELL;
 
+const worldDepth =
+    rows * CELL;
 
-let seed = 7331;
+/* Floor */
 
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+        worldWidth,
+        worldDepth
+    ),
+    floorMaterial
+);
 
-function rand() {
+floor.rotation.x = -Math.PI / 2;
 
-    seed++;
+floor.position.y = 0;
 
-    return randomSeeded(seed);
-}
+scene.add(floor);
 
+/* Ceiling */
 
-const gridSize =
-    Math.floor(
-        WORLD_SIZE / CELL
-    );
+const ceiling = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+        worldWidth,
+        worldDepth
+    ),
+    ceilingMaterial
+);
 
+ceiling.rotation.x = Math.PI / 2;
 
-const grid =
-    [];
+ceiling.position.y = 4;
 
-for (
-    let z = 0;
-    z < gridSize;
-    z++
-) {
+scene.add(ceiling);
 
-    grid[z] = [];
+/* Walls */
 
-    for (
-        let x = 0;
-        x < gridSize;
-        x++
-    ) {
+for (let z = 0; z < rows; z++) {
 
-        grid[z][x] =
-            rand() < .24;
-    }
-}
+    for (let x = 0; x < cols; x++) {
 
+        if (maze[z][x] !== "#")
+            continue;
 
-// open corridors
-
-for (
-    let x = 1;
-    x < gridSize - 1;
-    x++
-) {
-
-    if (
-        x % 2 === 0
-    ) {
-
-        for (
-            let z = 0;
-            z < gridSize;
-            z++
-        ) {
-
-            grid[z][x] = false;
-        }
-    }
-}
-
-
-for (
-    let z = 1;
-    z < gridSize - 1;
-    z++
-) {
-
-    if (
-        z % 3 === 0
-    ) {
-
-        for (
-            let x = 0;
-            x < gridSize;
-            x++
-        ) {
-
-            if (rand() > .2) {
-                grid[z][x] = false;
-            }
-        }
-    }
-}
-
-
-// create walls
-
-function addWall(
-    x,
-    z,
-    width = CELL,
-    depth = wallThickness
-) {
-
-    const mesh =
-        new THREE.Mesh(
+        const wall = new THREE.Mesh(
             new THREE.BoxGeometry(
-                width,
-                wallHeight,
-                depth
+                CELL,
+                4,
+                CELL
             ),
             wallMaterial
         );
 
-    mesh.position.set(
-        x,
-        wallHeight / 2,
-        z
-    );
-
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-
-    scene.add(mesh);
-
-    walls.push(mesh);
-
-    const box =
-        new THREE.Box3().setFromObject(
-            mesh
+        wall.position.set(
+            (x - cols / 2) * CELL + CELL / 2,
+            2,
+            (z - rows / 2) * CELL + CELL / 2
         );
 
-    wallBoxes.push(box);
-}
+        wall.castShadow = true;
+        wall.receiveShadow = true;
 
+        scene.add(wall);
 
-for (
-    let z = 0;
-    z < gridSize;
-    z++
-) {
+        walls.push(wall);
 
-    for (
-        let x = 0;
-        x < gridSize;
-        x++
-    ) {
-
-        if (!grid[z][x]) continue;
-
-        const px =
-            (x - gridSize / 2) *
-            CELL;
-
-        const pz =
-            (z - gridSize / 2) *
-            CELL;
-
-        addWall(
-            px,
-            pz
-        );
     }
+
 }
 
+/* --------------------------------------------------
+   FLUORESCENT LIGHTS
+-------------------------------------------------- */
 
-// outer walls
+for (let z = 1; z < rows - 1; z += 2) {
 
-addWall(
-    0,
-    -WORLD_SIZE / 2,
-    WORLD_SIZE,
-    .5
-);
+    for (let x = 1; x < cols - 1; x += 3) {
 
-addWall(
-    0,
-    WORLD_SIZE / 2,
-    WORLD_SIZE,
-    .5
-);
+        if (maze[z][x] !== ".")
+            continue;
 
-function rotateWall(
-    x,
-    z,
-    width,
-    depth
-) {
-
-    const mesh =
-        new THREE.Mesh(
-            new THREE.BoxGeometry(
-                width,
-                wallHeight,
-                depth
-            ),
-            wallMaterial
+        const light = new THREE.PointLight(
+            0xffffdd,
+            5,
+            17
         );
-
-    mesh.position.set(
-        x,
-        wallHeight / 2,
-        z
-    );
-
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-
-    scene.add(mesh);
-
-    walls.push(mesh);
-
-    wallBoxes.push(
-        new THREE.Box3().setFromObject(mesh)
-    );
-}
-
-rotateWall(
-    -WORLD_SIZE / 2,
-    0,
-    WORLD_SIZE,
-    .5
-);
-
-rotateWall(
-    WORLD_SIZE / 2,
-    0,
-    WORLD_SIZE,
-    .5
-);
-
-
-// ============================================================
-// FLUORESCENT LIGHTS
-// ============================================================
-
-const lightPositions = [];
-
-for (
-    let x = -48;
-    x <= 48;
-    x += 12
-) {
-
-    for (
-        let z = -48;
-        z <= 48;
-        z += 18
-    ) {
-
-        lightPositions.push(
-            { x, z }
-        );
-    }
-}
-
-
-lightPositions.forEach(
-    p => {
-
-        const fixture =
-            new THREE.Mesh(
-                new THREE.BoxGeometry(
-                    2.5,
-                    .08,
-                    .6
-                ),
-                new THREE.MeshStandardMaterial({
-                    color: 0xffffff,
-                    emissive: 0xffffff,
-                    emissiveIntensity: 2
-                })
-            );
-
-        fixture.position.set(
-            p.x,
-            wallHeight - .12,
-            p.z
-        );
-
-        scene.add(fixture);
-
-
-        const light =
-            new THREE.PointLight(
-                0xfff5bd,
-                rand() > .15 ? 1.5 : .2,
-                16
-            );
 
         light.position.set(
-            p.x,
-            wallHeight - .3,
-            p.z
+            (x - cols / 2) * CELL,
+            3.7,
+            (z - rows / 2) * CELL
         );
 
         scene.add(light);
-    }
-);
 
-
-// ============================================================
-// PLAYER
-// ============================================================
-
-const player = {
-
-    x: 0,
-    y: 1.7,
-    z: 0,
-
-    yaw: 0,
-    pitch: 0,
-
-    health: 100,
-
-    stamina: 100,
-
-    speed: 4,
-
-    sprintSpeed: 7,
-
-    radius: .45
-};
-
-
-camera.position.set(
-    player.x,
-    player.y,
-    player.z
-);
-
-
-// ============================================================
-// FIND SAFE SPAWN
-// ============================================================
-
-function isBlocked(
-    x,
-    z,
-    radius = .45
-) {
-
-    const test =
-        new THREE.Box3(
-            new THREE.Vector3(
-                x - radius,
-                0,
-                z - radius
+        const lamp = new THREE.Mesh(
+            new THREE.BoxGeometry(
+                2.4,
+                .08,
+                .45
             ),
-            new THREE.Vector3(
-                x + radius,
-                wallHeight,
-                z + radius
-            )
+            new THREE.MeshBasicMaterial({
+                color: 0xffffdd
+            })
         );
 
-    for (
-        const box of wallBoxes
-    ) {
+        lamp.position.copy(light.position);
+
+        scene.add(lamp);
+
+    }
+
+}
+
+/* --------------------------------------------------
+   KEY
+-------------------------------------------------- */
+
+const key = new THREE.Mesh(
+    new THREE.TorusGeometry(
+        .22,
+        .07,
+        8,
+        20
+    ),
+    new THREE.MeshStandardMaterial({
+        color: 0xffd43b,
+        emissive: 0x665000
+    })
+);
+
+key.position.set(
+    18,
+    1,
+    24
+);
+
+scene.add(key);
+
+/* --------------------------------------------------
+   EXIT
+-------------------------------------------------- */
+
+const exit = new THREE.Mesh(
+    new THREE.BoxGeometry(
+        2.5,
+        3.5,
+        .3
+    ),
+    new THREE.MeshStandardMaterial({
+        color: 0x292929
+    })
+);
+
+exit.position.set(
+    -60,
+    1.75,
+    -24
+);
+
+scene.add(exit);
+
+const exitText = new THREE.Mesh(
+    new THREE.PlaneGeometry(
+        2,
+        .5
+    ),
+    new THREE.MeshBasicMaterial({
+        color: 0xff3333
+    })
+);
+
+exitText.position.set(
+    -60,
+    3.6,
+    -23.8
+);
+
+scene.add(exitText);
+
+/* --------------------------------------------------
+   MONSTER
+-------------------------------------------------- */
+
+const monster = new THREE.Group();
+
+const monsterBody = new THREE.Mesh(
+    new THREE.BoxGeometry(
+        1.2,
+        2.8,
+        .8
+    ),
+    new THREE.MeshStandardMaterial({
+        color: 0x080808
+    })
+);
+
+monsterBody.position.y = 1.4;
+
+monster.add(monsterBody);
+
+const eyeMaterial =
+    new THREE.MeshBasicMaterial({
+        color: 0xff0000
+    });
+
+const eye1 = new THREE.Mesh(
+    new THREE.SphereGeometry(.09),
+    eyeMaterial
+);
+
+const eye2 = eye1.clone();
+
+eye1.position.set(
+    -.2,
+    2.1,
+    -.4
+);
+
+eye2.position.set(
+    .2,
+    2.1,
+    -.4
+);
+
+monster.add(
+    eye1,
+    eye2
+);
+
+monster.position.set(
+    -18,
+    0,
+    -18
+);
+
+scene.add(monster);
+
+/* --------------------------------------------------
+   PLAYER
+-------------------------------------------------- */
+
+const player = {
+    position: new THREE.Vector3(
+        -42,
+        1.6,
+        42
+    )
+};
+
+camera.position.copy(
+    player.position
+);
+
+/* --------------------------------------------------
+   COLLISION
+-------------------------------------------------- */
+
+function collides(pos) {
+
+    const radius = .45;
+
+    for (const wall of walls) {
+
+        const box = new THREE.Box3()
+            .setFromObject(wall);
 
         if (
-            test.intersectsBox(box)
+            pos.x > box.min.x - radius &&
+            pos.x < box.max.x + radius &&
+            pos.z > box.min.z - radius &&
+            pos.z < box.max.z + radius
         ) {
 
             return true;
+
         }
+
     }
 
     return false;
 }
 
-
-function findSpawn() {
-
-    for (
-        let i = 0;
-        i < 500;
-        i++
-    ) {
-
-        const x =
-            (rand() - .5) *
-            90;
-
-        const z =
-            (rand() - .5) *
-            90;
-
-        if (
-            !isBlocked(
-                x,
-                z
-            )
-        ) {
-
-            return {
-                x,
-                z
-            };
-        }
-    }
-
-    return {
-        x: 0,
-        z: 0
-    };
-}
-
-
-const spawn =
-    findSpawn();
-
-player.x =
-    spawn.x;
-
-player.z =
-    spawn.z;
-
-
-// ============================================================
-// KEY + EXIT
-// ============================================================
-
-let keyCollected = false;
-
-const keySpawn =
-    findSpawn();
-
-
-const keyMesh =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            .35,
-            .12,
-            .12
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0xffd83d,
-            emissive: 0xffaa00,
-            emissiveIntensity: 2
-        })
-    );
-
-keyMesh.position.set(
-    keySpawn.x,
-    .8,
-    keySpawn.z
-);
-
-scene.add(keyMesh);
-
-
-const keyLight =
-    new THREE.PointLight(
-        0xffc400,
-        3,
-        6
-    );
-
-keyLight.position.copy(
-    keyMesh.position
-);
-
-scene.add(keyLight);
-
-
-// exit
-
-const exitSpawn =
-    findSpawn();
-
-
-const exitGroup =
-    new THREE.Group();
-
-const exitWall =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            3,
-            3.5,
-            .3
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x202020,
-            roughness: .8
-        })
-    );
-
-exitGroup.add(exitWall);
-
-
-const exitSign =
-    new THREE.Mesh(
-        new THREE.BoxGeometry(
-            2.4,
-            .45,
-            .1
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0xff2222,
-            emissive: 0xff0000,
-            emissiveIntensity: 1.5
-        })
-    );
-
-exitSign.position.y =
-    1.6;
-
-exitGroup.add(exitSign);
-
-exitGroup.position.set(
-    exitSpawn.x,
-    1.75,
-    exitSpawn.z
-);
-
-scene.add(exitGroup);
-
-
-// ============================================================
-// MONSTER
-// ============================================================
-
-const monster = {
-
-    x: 20,
-    z: 20,
-
-    speed: 1.25,
-
-    active: true
-};
-
-
-const monsterGroup =
-    new THREE.Group();
-
-
-const monsterBody =
-    new THREE.Mesh(
-        new THREE.CapsuleGeometry(
-            .55,
-            1.8,
-            4,
-            8
-        ),
-        new THREE.MeshStandardMaterial({
-            color: 0x111111,
-            roughness: 1
-        })
-    );
-
-monsterBody.position.y =
-    1.3;
-
-monsterGroup.add(
-    monsterBody
-);
-
-
-const eyeMaterial =
-    new THREE.MeshStandardMaterial({
-        color: 0xff1111,
-        emissive: 0xff0000,
-        emissiveIntensity: 4
-    });
-
-
-const eye1 =
-    new THREE.Mesh(
-        new THREE.SphereGeometry(
-            .08,
-            8,
-            8
-        ),
-        eyeMaterial
-    );
-
-const eye2 =
-    eye1.clone();
-
-eye1.position.set(
-    -.18,
-    1.55,
-    -.48
-);
-
-eye2.position.set(
-    .18,
-    1.55,
-    -.48
-);
-
-monsterGroup.add(
-    eye1,
-    eye2
-);
-
-monsterGroup.position.set(
-    monster.x,
-    0,
-    monster.z
-);
-
-scene.add(
-    monsterGroup
-);
-
-
-// ============================================================
-// MULTIPLAYER
-// ============================================================
-
-const players = new Map();
-
-let socket = null;
-
-let myId = null;
-
-const partyCode =
-    new URLSearchParams(
-        location.search
-    ).get("party") ||
-    localStorage.getItem(
-        "partyCode"
-    );
-
-
-document.getElementById(
-    "partyInfo"
-).textContent =
-    partyCode
-    ? "PARTY " + partyCode
-    : "";
-
-
-function connect() {
-
-    const protocol =
-        location.protocol === "https:"
-        ? "wss:"
-        : "ws:";
-
-    socket =
-        new WebSocket(
-            `${protocol}//${location.host}`
-        );
-
-
-    socket.onopen = () => {
-
-        socket.send(
-            JSON.stringify({
-
-                type: "gameJoin",
-
-                code: partyCode,
-
-                name:
-                    localStorage.getItem(
-                        "playerName"
-                    ) ||
-                    "Player"
-
-            })
-        );
-    };
-
-
-    socket.onmessage =
-        event => {
-
-            let data;
-
-            try {
-                data =
-                    JSON.parse(
-                        event.data
-                    );
-            } catch {
-                return;
-            }
-
-            handleNetwork(
-                data
-            );
-        };
-
-
-    socket.onclose = () => {
-
-        showMessage(
-            "DISCONNECTED FROM SERVER"
-        );
-    };
-}
-
-
-function networkSend(data) {
-
-    if (
-        socket &&
-        socket.readyState ===
-        WebSocket.OPEN
-    ) {
-
-        socket.send(
-            JSON.stringify(data)
-        );
-    }
-}
-
-
-function handleNetwork(data) {
-
-    if (
-        data.type ===
-        "gameJoined"
-    ) {
-
-        myId =
-            data.playerId;
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "players"
-    ) {
-
-        data.players.forEach(
-            remote => {
-
-                if (
-                    remote.id === myId
-                ) {
-                    return;
-                }
-
-                updateRemotePlayer(
-                    remote
-                );
-            }
-        );
-
-        const ids =
-            new Set(
-                data.players.map(
-                    p => p.id
-                )
-            );
-
-        for (
-            const [id, obj]
-            of players
-        ) {
-
-            if (!ids.has(id)) {
-
-                scene.remove(
-                    obj.group
-                );
-
-                players.delete(id);
-            }
-        }
-    }
-
-
-    if (
-        data.type ===
-        "worldState"
-    ) {
-
-        keyCollected =
-            data.keyCollected;
-
-        if (
-            keyCollected
-        ) {
-
-            keyMesh.visible =
-                false;
-
-            keyLight.visible =
-                false;
-        }
-    }
-
-
-    if (
-        data.type ===
-        "gameOver"
-    ) {
-
-        endGame(
-            false,
-            data.message ||
-            "GAME OVER"
-        );
-    }
-
-
-    if (
-        data.type ===
-        "gameWon"
-    ) {
-
-        endGame(
-            true,
-            "YOU ESCAPED."
-        );
-    }
-}
-
-
-function createRemotePlayer(
-    id,
-    name
-) {
-
-    const group =
-        new THREE.Group();
-
-
-    const body =
-        new THREE.Mesh(
-            new THREE.CapsuleGeometry(
-                .35,
-                1.1,
-                3,
-                8
-            ),
-            new THREE.MeshStandardMaterial({
-                color: 0x3d5870
-            })
-        );
-
-    body.position.y =
-        .9;
-
-    group.add(body);
-
-
-    const label =
-        document.createElement(
-            "canvas"
-        );
-
-    label.width = 512;
-    label.height = 128;
-
-    const ctx =
-        label.getContext("2d");
-
-    ctx.fillStyle =
-        "white";
-
-    ctx.font =
-        "bold 42px Arial";
-
-    ctx.textAlign =
-        "center";
-
-    ctx.fillText(
-        name,
-        256,
-        60
-    );
-
-
-    const texture =
-        new THREE.CanvasTexture(
-            label
-        );
-
-    const sprite =
-        new THREE.Sprite(
-            new THREE.SpriteMaterial({
-                map: texture,
-                transparent: true
-            })
-        );
-
-    sprite.scale.set(
-        2.5,
-        .6,
-        1
-    );
-
-    sprite.position.y =
-        2.1;
-
-    group.add(sprite);
-
-    scene.add(group);
-
-    players.set(
-        id,
-        {
-            group,
-            targetX: 0,
-            targetZ: 0,
-            targetYaw: 0
-        }
-    );
-}
-
-
-function updateRemotePlayer(
-    remote
-) {
-
-    if (
-        !players.has(remote.id)
-    ) {
-
-        createRemotePlayer(
-            remote.id,
-            remote.name
-        );
-    }
-
-    const p =
-        players.get(
-            remote.id
-        );
-
-    p.targetX =
-        remote.x;
-
-    p.targetZ =
-        remote.z;
-
-    p.targetYaw =
-        remote.yaw;
-}
-
-
-function updateRemotePlayers() {
-
-    for (
-        const p of players.values()
-    ) {
-
-        p.group.position.x +=
-            (
-                p.targetX -
-                p.group.position.x
-            ) * .2;
-
-        p.group.position.z +=
-            (
-                p.targetZ -
-                p.group.position.z
-            ) * .2;
-
-        p.group.rotation.y +=
-            (
-                p.targetYaw -
-                p.group.rotation.y
-            ) * .2;
-    }
-}
-
-
-connect();
-
-
-// ============================================================
-// CONTROLS
-// ============================================================
-
-const keys =
-    {};
-
-let locked = false;
-
-let flashlightOn = true;
-
-
-window.addEventListener(
+/* --------------------------------------------------
+   INPUT
+-------------------------------------------------- */
+
+document.addEventListener(
     "keydown",
-    event => {
+    e => {
 
-        keys[
-            event.code
-        ] = true;
+        keys[e.code] = true;
 
         if (
-            event.code ===
-            "KeyF"
+            e.code === "KeyF" &&
+            !e.repeat
         ) {
 
             flashlightOn =
                 !flashlightOn;
 
-            playerLight.visible =
+            flashlight.visible =
                 flashlightOn;
+
+            document.getElementById(
+                "flashlightText"
+            ).textContent =
+                flashlightOn
+                ? "FLASHLIGHT: ON"
+                : "FLASHLIGHT: OFF";
+
         }
+
     }
 );
 
-
-window.addEventListener(
+document.addEventListener(
     "keyup",
-    event => {
+    e => {
 
-        keys[
-            event.code
-        ] = false;
+        keys[e.code] = false;
+
     }
 );
 
+/* Mouse */
+
+document.addEventListener(
+    "mousemove",
+    e => {
+
+        if (!canLook)
+            return;
+
+        yaw -= e.movementX * .002;
+        pitch -= e.movementY * .002;
+
+        pitch = Math.max(
+            -Math.PI / 2,
+            Math.min(
+                Math.PI / 2,
+                pitch
+            )
+        );
+
+        camera.rotation.y = yaw;
+        camera.rotation.x = pitch;
+
+    }
+);
 
 renderer.domElement.addEventListener(
     "click",
     () => {
 
-        renderer.domElement.requestPointerLock();
+        if (!gameEnded) {
+
+            renderer.domElement
+                .requestPointerLock();
+
+        }
+
     }
 );
-
 
 document.addEventListener(
     "pointerlockchange",
     () => {
 
-        locked =
+        canLook =
             document.pointerLockElement ===
             renderer.domElement;
+
     }
 );
 
+/* --------------------------------------------------
+   NETWORK
+-------------------------------------------------- */
 
-document.addEventListener(
-    "mousemove",
-    event => {
+function connectServer() {
 
-        if (!locked) {
+    ws = new WebSocket(SERVER);
+
+    ws.onopen = () => {
+
+        connected = true;
+
+        ws.send(JSON.stringify({
+            type: "gameJoin",
+            token: sessionToken,
+            code: partyCode,
+            name: playerName
+        }));
+
+    };
+
+    ws.onclose = () => {
+
+        connected = false;
+
+        if (!gameEnded) {
+
+            setTimeout(
+                connectServer,
+                2000
+            );
+
+        }
+
+    };
+
+    ws.onmessage = event => {
+
+        let data;
+
+        try {
+            data = JSON.parse(event.data);
+        } catch {
             return;
         }
 
-        player.yaw -=
-            event.movementX *
-            .0022;
+        handleNetwork(data);
 
-        player.pitch -=
-            event.movementY *
-            .0022;
+    };
 
-        player.pitch =
-            THREE.MathUtils.clamp(
-                player.pitch,
-                -1.45,
-                1.45
-            );
-    }
-);
-
-
-// ============================================================
-// COLLISION
-// ============================================================
-
-function tryMove(
-    dx,
-    dz
-) {
-
-    const nx =
-        player.x + dx;
-
-    const nz =
-        player.z + dz;
-
-
-    if (
-        !isBlocked(
-            nx,
-            player.z,
-            player.radius
-        )
-    ) {
-
-        player.x = nx;
-    }
-
-
-    if (
-        !isBlocked(
-            player.x,
-            nz,
-            player.radius
-        )
-    ) {
-
-        player.z = nz;
-    }
 }
 
+function handleNetwork(data) {
 
-// ============================================================
-// MESSAGE
-// ============================================================
+    if (data.type === "gameJoined") {
 
-let messageTimer = 0;
+        keyCollected =
+            data.keyCollected;
 
-function showMessage(text) {
+        updateObjective();
 
-    const el =
-        document.getElementById(
-            "message"
-        );
-
-    el.textContent =
-        text;
-
-    el.style.opacity =
-        "1";
-
-    messageTimer =
-        3;
-}
-
-
-// ============================================================
-// GAME STATE
-// ============================================================
-
-let gameEnded = false;
-
-let lastTime =
-    performance.now();
-
-let networkTimer = 0;
-
-let damageCooldown = 0;
-
-
-function updatePlayer(
-    dt
-) {
-
-    if (gameEnded) {
         return;
     }
 
-    const forward =
-        keys["KeyW"];
+    if (data.type === "players") {
 
-    const backward =
-        keys["KeyS"];
+        updateRemotePlayers(
+            data.players
+        );
 
-    const left =
-        keys["KeyA"];
-
-    const right =
-        keys["KeyD"];
-
-
-    let x = 0;
-    let z = 0;
-
-
-    if (forward) z -= 1;
-    if (backward) z += 1;
-    if (left) x -= 1;
-    if (right) x += 1;
-
-
-    const moving =
-        x !== 0 ||
-        z !== 0;
-
-
-    let sprint =
-        keys["ShiftLeft"] ||
-        keys["ShiftRight"];
-
-
-    if (
-        player.stamina <= 0
-    ) {
-
-        sprint = false;
+        return;
     }
 
+    if (data.type === "keyCollected") {
 
-    if (
-        sprint &&
-        moving
+        keyCollected = true;
+
+        key.visible = false;
+
+        updateObjective();
+
+        return;
+    }
+
+    if (data.type === "gameWon") {
+
+        finishGame(
+            true,
+            data.name || "Someone"
+        );
+
+        return;
+    }
+
+    if (data.type === "gameOver") {
+
+        finishGame(
+            false,
+            data.name || ""
+        );
+
+        return;
+    }
+
+}
+
+/* --------------------------------------------------
+   REMOTE PLAYERS
+-------------------------------------------------- */
+
+function makeRemotePlayer(name) {
+
+    const group = new THREE.Group();
+
+    const body = new THREE.Mesh(
+        new THREE.CapsuleGeometry(
+            .45,
+            1.1,
+            6,
+            12
+        ),
+        new THREE.MeshStandardMaterial({
+            color: 0x4b8bc4
+        })
+    );
+
+    body.position.y = 1.1;
+
+    group.add(body);
+
+    const canvas =
+        document.createElement("canvas");
+
+    canvas.width = 512;
+    canvas.height = 128;
+
+    const ctx =
+        canvas.getContext("2d");
+
+    ctx.fillStyle = "white";
+    ctx.font = "bold 44px Arial";
+    ctx.textAlign = "center";
+
+    ctx.fillText(
+        name,
+        256,
+        65
+    );
+
+    const texture =
+        new THREE.CanvasTexture(canvas);
+
+    const label = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true
+        })
+    );
+
+    label.scale.set(
+        3.5,
+        .9,
+        1
+    );
+
+    label.position.y = 2.8;
+
+    group.add(label);
+
+    scene.add(group);
+
+    return group;
+}
+
+function updateRemotePlayers(players) {
+
+    const current = new Set();
+
+    for (const p of players) {
+
+        if (p.id === sessionToken)
+            continue;
+
+        current.add(p.id);
+
+        if (!remotePlayers.has(p.id)) {
+
+            remotePlayers.set(
+                p.id,
+                {
+                    mesh: makeRemotePlayer(
+                        p.name
+                    ),
+                    target:
+                        new THREE.Vector3()
+                }
+            );
+
+        }
+
+        const remote =
+            remotePlayers.get(p.id);
+
+        remote.target.set(
+            p.x,
+            p.y,
+            p.z
+        );
+
+    }
+
+    for (
+        const [id, remote]
+        of remotePlayers
     ) {
 
-        player.stamina -=
-            25 * dt;
+        if (!current.has(id)) {
+
+            scene.remove(
+                remote.mesh
+            );
+
+            remotePlayers.delete(id);
+
+        }
+
+    }
+
+    document.getElementById(
+        "playersHUD"
+    ).innerHTML =
+        `<div>PLAYERS: ${players.length}</div>`;
+
+}
+
+/* --------------------------------------------------
+   OBJECTIVE
+-------------------------------------------------- */
+
+function updateObjective() {
+
+    const objective =
+        document.getElementById(
+            "objective"
+        );
+
+    if (!keyCollected) {
+
+        objective.textContent =
+            "FIND THE KEY";
 
     } else {
 
-        player.stamina +=
-            16 * dt;
+        objective.textContent =
+            "THE EXIT IS OPEN";
+
     }
 
-
-    player.stamina =
-        THREE.MathUtils.clamp(
-            player.stamina,
-            0,
-            100
-        );
-
-
-    let speed =
-        player.speed;
-
-
-    if (sprint) {
-
-        speed =
-            player.sprintSpeed;
-    }
-
-
-    if (moving) {
-
-        const length =
-            Math.sqrt(
-                x*x + z*z
-            );
-
-        x /= length;
-        z /= length;
-
-
-        const sin =
-            Math.sin(
-                player.yaw
-            );
-
-        const cos =
-            Math.cos(
-                player.yaw
-            );
-
-
-        const dx =
-            (
-                x * cos -
-                z * sin
-            ) *
-            speed *
-            dt;
-
-
-        const dz =
-            (
-                x * sin +
-                z * cos
-            ) *
-            speed *
-            dt;
-
-
-        tryMove(
-            dx,
-            dz
-        );
-    }
 }
 
+/* --------------------------------------------------
+   GAMEPLAY
+-------------------------------------------------- */
 
-function updateCamera() {
+function updatePlayer(delta) {
 
-    camera.position.set(
-        player.x,
-        player.y,
-        player.z
-    );
+    if (gameEnded)
+        return;
 
-    camera.rotation.order =
-        "YXZ";
+    const moving =
+        keys.KeyW ||
+        keys.KeyA ||
+        keys.KeyS ||
+        keys.KeyD;
 
-    camera.rotation.y =
-        player.yaw;
+    let sprinting =
+        keys.ShiftLeft ||
+        keys.ShiftRight;
 
-    camera.rotation.x =
-        player.pitch;
+    if (
+        stamina <= 0
+    ) {
 
+        sprinting = false;
+
+    }
+
+    const speed =
+        sprinting
+        ? 8
+        : 4.5;
+
+    if (moving && sprinting) {
+
+        stamina -= 30 * delta;
+
+    } else {
+
+        stamina += 18 * delta;
+
+    }
+
+    stamina =
+        Math.max(
+            0,
+            Math.min(
+                100,
+                stamina
+            )
+        );
 
     const direction =
-        new THREE.Vector3(
-            0,
-            0,
-            -1
+        new THREE.Vector3();
+
+    if (keys.KeyW)
+        direction.z -= 1;
+
+    if (keys.KeyS)
+        direction.z += 1;
+
+    if (keys.KeyA)
+        direction.x -= 1;
+
+    if (keys.KeyD)
+        direction.x += 1;
+
+    if (direction.lengthSq() > 0) {
+
+        direction.normalize();
+
+        direction.applyAxisAngle(
+            new THREE.Vector3(0,1,0),
+            yaw
         );
 
-    direction.applyEuler(
-        camera.rotation
-    );
-
-
-    flashlightTarget.position.copy(
-        camera.position
-    );
-
-    flashlightTarget.position.add(
-        direction
-    );
-
-    playerLight.position.copy(
-        camera.position
-    );
-}
-
-
-function updateKey() {
-
-    if (!keyMesh.visible) {
-        return;
-    }
-
-    keyMesh.rotation.y +=
-        .02;
-
-    keyMesh.position.y =
-        .8 +
-        Math.sin(
-            performance.now() *
-            .003
-        ) *
-        .12;
-
-
-    const dx =
-        player.x -
-        keyMesh.position.x;
-
-    const dz =
-        player.z -
-        keyMesh.position.z;
-
-
-    if (
-        Math.sqrt(
-            dx*dx +
-            dz*dz
-        ) < 1.5
-    ) {
-
-        keyCollected =
-            true;
-
-        keyMesh.visible =
-            false;
-
-        keyLight.visible =
-            false;
-
-        showMessage(
-            "YOU FOUND THE KEY"
-        );
-
-        networkSend({
-
-            type:
-                "collectKey"
-
-        });
-    }
-}
-
-
-function updateExit() {
-
-    const dx =
-        player.x -
-        exitGroup.position.x;
-
-    const dz =
-        player.z -
-        exitGroup.position.z;
-
-
-    const distance =
-        Math.sqrt(
-            dx*dx +
-            dz*dz
-        );
-
-
-    if (
-        distance < 2
-    ) {
-
-        if (keyCollected) {
-
-            endGame(
-                true,
-                "YOU FOUND A WAY OUT."
+        const movement =
+            direction.multiplyScalar(
+                speed * delta
             );
 
-            networkSend({
-                type:
-                    "gameWon"
-            });
+        const nextX =
+            player.position.clone();
 
-        } else {
+        nextX.x += movement.x;
 
-            showMessage(
-                "THE DOOR IS LOCKED. FIND THE KEY."
-            );
+        if (!collides(nextX))
+            player.position.x =
+                nextX.x;
+
+        const nextZ =
+            player.position.clone();
+
+        nextZ.z += movement.z;
+
+        if (!collides(nextZ))
+            player.position.z =
+                nextZ.z;
+
+    }
+
+    camera.position.copy(
+        player.position
+    );
+
+    document.getElementById(
+        "health"
+    ).style.width =
+        health + "%";
+
+    document.getElementById(
+        "stamina"
+    ).style.width =
+        stamina + "%";
+
+}
+
+/* --------------------------------------------------
+   KEY / EXIT
+-------------------------------------------------- */
+
+function checkObjects() {
+
+    if (
+        !keyCollected &&
+        player.position.distanceTo(
+            key.position
+        ) < 2
+    ) {
+
+        if (connected) {
+
+            ws.send(JSON.stringify({
+                type: "collectKey"
+            }));
+
         }
+
     }
-}
-
-
-// ============================================================
-// MONSTER AI
-// ============================================================
-
-function updateMonster(dt) {
-
-    if (!monster.active) {
-        return;
-    }
-
-
-    const dx =
-        player.x -
-        monster.x;
-
-    const dz =
-        player.z -
-        monster.z;
-
-
-    const distance =
-        Math.sqrt(
-            dx*dx +
-            dz*dz
-        );
-
-
-    // wake up when player gets close
 
     if (
-        distance < 32
+        keyCollected &&
+        player.position.distanceTo(
+            exit.position
+        ) < 3
     ) {
 
-        monster.x +=
-            dx /
-            Math.max(distance, .01) *
-            monster.speed *
-            dt;
+        if (connected) {
 
-        monster.z +=
-            dz /
-            Math.max(distance, .01) *
-            monster.speed *
-            dt;
+            ws.send(JSON.stringify({
+                type: "gameWon"
+            }));
 
+        }
 
-        monsterGroup.position.set(
-            monster.x,
-            0,
-            monster.z
-        );
-
-
-        monsterGroup.lookAt(
-            player.x,
-            1,
-            player.z
-        );
     }
 
+}
+
+/* --------------------------------------------------
+   MONSTER
+-------------------------------------------------- */
+
+function updateMonster(delta) {
+
+    if (gameEnded)
+        return;
+
+    const distance =
+        monster.position.distanceTo(
+            player.position
+        );
+
+    if (distance < 35) {
+
+        const direction =
+            new THREE.Vector3()
+                .subVectors(
+                    player.position,
+                    monster.position
+                );
+
+        direction.y = 0;
+
+        if (direction.lengthSq() > 0) {
+
+            direction.normalize();
+
+            const speed =
+                distance < 12
+                ? 2.7
+                : 1.6;
+
+            monster.position.add(
+                direction.multiplyScalar(
+                    speed * delta
+                )
+            );
+
+            monster.lookAt(
+                player.position.x,
+                monster.position.y,
+                player.position.z
+            );
+
+        }
+
+    }
 
     if (
-        distance < 1.5 &&
+        distance < 1.7 &&
         damageCooldown <= 0
     ) {
 
-        player.health -=
-            20;
+        health -= 12;
 
-        damageCooldown =
-            1;
+        damageCooldown = 1;
 
-        const damage =
-            document.getElementById(
-                "damage"
-            );
+        if (health <= 0) {
 
-        damage.style.opacity =
-            "1";
+            health = 0;
 
-        setTimeout(
-            () => {
-                damage.style.opacity =
-                    "0";
-            },
-            150
-        );
+            if (connected) {
 
+                ws.send(JSON.stringify({
+                    type: "gameOver"
+                }));
 
-        if (
-            player.health <= 0
-        ) {
+            }
 
-            endGame(
-                false,
-                "THE ENTITY FOUND YOU."
-            );
-
-            networkSend({
-                type:
-                    "gameOver"
-            });
         }
+
     }
+
 }
 
+/* --------------------------------------------------
+   NETWORK POSITION
+-------------------------------------------------- */
 
-// ============================================================
-// HUD
-// ============================================================
+function sendPosition() {
 
-function updateHUD(dt) {
+    if (!connected)
+        return;
+
+    const now =
+        performance.now();
 
     if (
-        damageCooldown > 0
-    ) {
+        now - lastSent < 80
+    )
+        return;
 
-        damageCooldown -=
-            dt;
-    }
+    lastSent = now;
 
+    ws.send(JSON.stringify({
+        type: "playerUpdate",
+        x: player.position.x,
+        y: player.position.y,
+        z: player.position.z
+    }));
 
-    document.getElementById(
-        "healthBar"
-    ).style.width =
-        player.health + "%";
-
-
-    document.getElementById(
-        "staminaBar"
-    ).style.width =
-        player.stamina + "%";
-
-
-    if (messageTimer > 0) {
-
-        messageTimer -=
-            dt;
-
-    } else {
-
-        document.getElementById(
-            "message"
-        ).style.opacity =
-            "0";
-    }
 }
 
+/* --------------------------------------------------
+   END GAME
+-------------------------------------------------- */
 
-// ============================================================
-// END GAME
-// ============================================================
+function finishGame(won, name) {
 
-function endGame(
-    won,
-    text
-) {
-
-    if (gameEnded) {
+    if (gameEnded)
         return;
+
+    gameEnded = true;
+
+    if (
+        document.pointerLockElement
+    ) {
+
+        document.exitPointerLock();
+
     }
 
-    gameEnded =
-        true;
-
-
-    const screen =
-        document.getElementById(
-            "blackout"
-        );
+    document.getElementById(
+        "endScreen"
+    ).classList.remove("hidden");
 
     const title =
         document.getElementById(
             "endTitle"
         );
 
-    const endText =
+    const text =
         document.getElementById(
             "endText"
         );
-
 
     if (won) {
 
         title.textContent =
             "YOU ESCAPED";
 
-        endText.textContent =
-            text ||
-            "YOU MADE IT OUT.";
+        text.textContent =
+            name
+            ? `${name} found the exit. You escaped the Backrooms.`
+            : "You escaped the Backrooms.";
 
     } else {
 
         title.textContent =
             "YOU DIED";
 
-        endText.textContent =
-            text ||
-            "THE BACKROOMS HAVE CLAIMED YOU.";
+        text.textContent =
+            "Something found you.";
+
     }
 
-
-    screen.style.display =
-        "flex";
 }
 
+/* --------------------------------------------------
+   START
+-------------------------------------------------- */
 
-// ============================================================
-// NETWORK UPDATE
-// ============================================================
+document.getElementById(
+    "playButton"
+).onclick = () => {
 
-function sendPosition() {
+    document.getElementById(
+        "startScreen"
+    ).classList.add("hidden");
 
-    networkSend({
+    renderer.domElement.requestPointerLock();
 
-        type:
-            "playerUpdate",
+};
 
-        x:
-            player.x,
+connectServer();
 
-        z:
-            player.z,
-
-        yaw:
-            player.yaw
-    });
-}
-
-
-// ============================================================
-// ANIMATION
-// ============================================================
+/* --------------------------------------------------
+   ANIMATION
+-------------------------------------------------- */
 
 function animate() {
 
@@ -2199,71 +1442,49 @@ function animate() {
         animate
     );
 
-
-    const now =
-        performance.now();
-
-    const dt =
+    const delta =
         Math.min(
-            (now - lastTime) /
-            1000,
+            clock.getDelta(),
             .05
         );
 
-    lastTime =
-        now;
+    damageCooldown -= delta;
 
+    updatePlayer(delta);
 
-    updatePlayer(
-        dt
-    );
+    checkObjects();
 
-    updateCamera();
+    updateMonster(delta);
 
-    updateKey();
+    sendPosition();
 
-    updateExit();
-
-    updateMonster(
-        dt
-    );
-
-    updateHUD(
-        dt
-    );
-
-    updateRemotePlayers();
-
-
-    networkTimer +=
-        dt;
-
-
-    if (
-        networkTimer >
-        .05
+    for (
+        const remote
+        of remotePlayers.values()
     ) {
 
-        networkTimer =
-            0;
+        remote.mesh.position.lerp(
+            remote.target,
+            .15
+        );
 
-        sendPosition();
     }
 
+    key.rotation.y +=
+        delta * 2;
 
     renderer.render(
         scene,
         camera
     );
-}
 
+}
 
 animate();
 
-
-// ============================================================
-// RESIZE
-// ============================================================
+/* --------------------------------------------------
+   RESIZE
+-------------------------------------------------- */
 
 window.addEventListener(
     "resize",
@@ -2279,6 +1500,7 @@ window.addEventListener(
             innerWidth,
             innerHeight
         );
+
     }
 );
 
