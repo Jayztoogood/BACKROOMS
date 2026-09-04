@@ -1,334 +1,275 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const WebSocket = require("ws");
 
-const PORT =
-    process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
-const server =
-    http.createServer(
-        (req, res) => {
+const parties = new Map();
 
-            let filePath =
-                req.url.split("?")[0];
+const sessions = new Map();
 
-            if (filePath === "/") {
-                filePath = "/index.html";
-            }
+const MIME = {
+    ".html": "text/html; charset=utf-8",
+    ".js": "text/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon"
+};
 
-            filePath =
-                path.join(
-                    __dirname,
-                    filePath
-                );
+function send(ws, data) {
 
-            if (!fs.existsSync(filePath)) {
+    if (
+        ws &&
+        ws.readyState === WebSocket.OPEN
+    ) {
 
-                res.writeHead(404);
-                res.end("Not found");
+        ws.send(
+            JSON.stringify(data)
+        );
 
-                return;
-            }
+    }
 
-            const ext =
-                path.extname(
-                    filePath
-                );
-
-            const types = {
-
-                ".html":
-                    "text/html",
-
-                ".js":
-                    "text/javascript",
-
-                ".css":
-                    "text/css",
-
-                ".json":
-                    "application/json",
-
-                ".png":
-                    "image/png",
-
-                ".jpg":
-                    "image/jpeg",
-
-                ".svg":
-                    "image/svg+xml"
-            };
-
-            res.writeHead(
-                200,
-                {
-                    "Content-Type":
-                        types[ext] ||
-                        "application/octet-stream"
-                }
-            );
-
-            fs.createReadStream(
-                filePath
-            ).pipe(res);
-        }
-    );
-
-
-const wss =
-    new WebSocket.Server({
-        server
-    });
-
-
-// ============================================================
-// DATA
-// ============================================================
-
-const parties =
-    new Map();
-
-const clients =
-    new Map();
-
-
-// ============================================================
-// HELPERS
-// ============================================================
-
-function makeId() {
-
-    return (
-        Math.random()
-            .toString(36)
-            .substring(2, 10)
-    );
 }
-
 
 function makeCode() {
 
     const chars =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-    let code = "";
+    let code;
 
     do {
 
         code = "";
 
-        for (
-            let i = 0;
-            i < 5;
-            i++
-        ) {
+        for (let i = 0; i < 5; i++) {
 
-            code +=
-                chars[
-                    Math.floor(
-                        Math.random() *
-                        chars.length
-                    )
-                ];
+            code += chars[
+                Math.floor(
+                    Math.random() *
+                    chars.length
+                )
+            ];
+
         }
 
-    } while (
-        parties.has(code)
-    );
+    } while (parties.has(code));
 
     return code;
 }
 
+function makeToken() {
 
-function cleanName(name) {
-
-    if (
-        typeof name !==
-        "string"
-    ) {
-
-        return "Player";
-    }
-
-    name =
-        name
-            .replace(
-                /[^a-zA-Z0-9 _-]/g,
-                ""
-            )
-            .trim()
-            .substring(0, 16);
-
-    return name ||
-        "Player";
+    return crypto
+        .randomBytes(24)
+        .toString("hex");
 }
 
+function lobbyData(party) {
 
-function send(ws, data) {
+    return {
+        type: "lobby",
+        host: party.host,
+        players: [...party.players.values()]
+            .map(p => ({
+                id: p.id,
+                name: p.name,
+                host: p.id === party.host
+            }))
+    };
 
-    if (
-        ws &&
-        ws.readyState ===
-        WebSocket.OPEN
+}
+
+function broadcastLobby(party) {
+
+    const data = lobbyData(party);
+
+    for (
+        const player
+        of party.players.values()
     ) {
 
-        ws.send(
-            JSON.stringify(data)
+        send(
+            player.ws,
+            data
         );
+
     }
+
 }
 
+function broadcastPlayers(party) {
 
-function broadcast(
-    party,
-    data
-) {
+    const players = [
+        ...party.players.values()
+    ].map(p => ({
+        id: p.id,
+        name: p.name,
+        x: p.x || 0,
+        y: p.y || 1.6,
+        z: p.z || 0
+    }));
 
-    party.players.forEach(
-        player => {
+    for (
+        const player
+        of party.players.values()
+    ) {
 
-            send(
-                player.ws,
-                data
-            );
-        }
-    );
+        send(
+            player.ws,
+            {
+                type: "players",
+                players
+            }
+        );
+
+    }
+
 }
 
+function removePlayer(player) {
 
-function sendLobby(
-    party
-) {
-
-    broadcast(
-        party,
-        {
-            type: "lobby",
-
-            code: party.code,
-
-            hostId: party.hostId,
-
-            started:
-                party.started,
-
-            players:
-                Array.from(
-                    party.players.values()
-                ).map(
-                    player => ({
-                        id:
-                            player.id,
-
-                        name:
-                            player.name
-                    })
-                )
-        }
-    );
-}
-
-
-function removePlayer(
-    player
-) {
-
-    if (!player.party) {
+    if (!player)
         return;
-    }
 
     const party =
         parties.get(
             player.party
         );
 
-    if (!party) {
+    if (!party)
         return;
-    }
 
     party.players.delete(
         player.id
     );
 
-    clients.delete(
-        player.ws
+    sessions.delete(
+        player.id
     );
 
+    if (
+        party.host === player.id
+    ) {
+
+        const next =
+            party.players.values().next();
+
+        if (!next.done) {
+
+            party.host =
+                next.value.id;
+
+        }
+
+    }
 
     if (
         party.players.size === 0
     ) {
 
         parties.delete(
-            party.code
+            player.party
         );
 
         return;
+
     }
 
-
-    // choose new host
-
-    if (
-        party.hostId ===
-        player.id
-    ) {
-
-        const first =
-            party.players
-                .values()
-                .next()
-                .value;
-
-        if (first) {
-
-            party.hostId =
-                first.id;
-        }
-    }
-
-
-    sendLobby(
-        party
-    );
+    broadcastLobby(party);
+    broadcastPlayers(party);
 }
 
+/* --------------------------------------------------
+   HTTP SERVER
+-------------------------------------------------- */
 
-// ============================================================
-// CONNECTION
-// ============================================================
+const server = http.createServer(
+    (req, res) => {
+
+        let requestPath =
+            req.url.split("?")[0];
+
+        if (
+            requestPath === "/"
+        ) {
+
+            requestPath = "/index.html";
+
+        }
+
+        const filePath =
+            path.join(
+                __dirname,
+                requestPath
+            );
+
+        if (
+            !filePath.startsWith(
+                __dirname
+            )
+        ) {
+
+            res.writeHead(403);
+            res.end("Forbidden");
+            return;
+
+        }
+
+        fs.readFile(
+            filePath,
+            (err, data) => {
+
+                if (err) {
+
+                    res.writeHead(404);
+                    res.end("Not Found");
+                    return;
+
+                }
+
+                const ext =
+                    path.extname(
+                        filePath
+                    );
+
+                res.writeHead(
+                    200,
+                    {
+                        "Content-Type":
+                            MIME[ext] ||
+                            "application/octet-stream"
+                    }
+                );
+
+                res.end(data);
+
+            }
+        );
+
+    }
+);
+
+/* --------------------------------------------------
+   WEBSOCKET
+-------------------------------------------------- */
+
+const wss =
+    new WebSocket.Server({
+        server
+    });
 
 wss.on(
     "connection",
     ws => {
 
-        const player = {
-
-            id:
-                makeId(),
-
-            ws,
-
-            name:
-                "Player",
-
-            party:
-                null,
-
-            x: 0,
-
-            z: 0,
-
-            yaw: 0
-        };
-
-
-        clients.set(
-            ws,
-            player
-        );
-
+        let player = null;
 
         ws.on(
             "message",
@@ -345,828 +286,609 @@ wss.on(
 
                 } catch {
 
-                    send(
-                        ws,
-                        {
-                            type:
-                                "error",
+                    send(ws, {
+                        type: "error",
+                        message: "Invalid message."
+                    });
 
+                    return;
+
+                }
+
+                /* ---------------------------
+                   CREATE PARTY
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "createParty"
+                ) {
+
+                    const name =
+                        String(
+                            data.name ||
+                            "Player"
+                        )
+                        .trim()
+                        .slice(0, 16);
+
+                    if (!name) {
+
+                        send(ws, {
+                            type: "error",
                             message:
-                                "Invalid message."
-                        }
+                                "Enter your name."
+                        });
+
+                        return;
+
+                    }
+
+                    const code =
+                        makeCode();
+
+                    const token =
+                        makeToken();
+
+                    const newPlayer = {
+                        id: token,
+                        name,
+                        party: code,
+                        ws,
+                        x: -42,
+                        y: 1.6,
+                        z: 42
+                    };
+
+                    const party = {
+                        code,
+                        host: token,
+                        started: false,
+                        keyCollected: false,
+                        players: new Map()
+                    };
+
+                    party.players.set(
+                        token,
+                        newPlayer
+                    );
+
+                    parties.set(
+                        code,
+                        party
+                    );
+
+                    sessions.set(
+                        token,
+                        newPlayer
+                    );
+
+                    player =
+                        newPlayer;
+
+                    send(ws, {
+                        type: "session",
+                        token
+                    });
+
+                    send(ws, {
+                        type: "partyCreated",
+                        code
+                    });
+
+                    broadcastLobby(party);
+
+                    return;
+                }
+
+                /* ---------------------------
+                   JOIN PARTY
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "joinParty"
+                ) {
+
+                    const code =
+                        String(
+                            data.code || ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+                    const name =
+                        String(
+                            data.name ||
+                            "Player"
+                        )
+                        .trim()
+                        .slice(0, 16);
+
+                    const party =
+                        parties.get(code);
+
+                    if (!party) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "Party not found."
+                        });
+
+                        return;
+
+                    }
+
+                    if (party.started) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "The game has already started."
+                        });
+
+                        return;
+
+                    }
+
+                    if (
+                        party.players.size >= 8
+                    ) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "Party is full."
+                        });
+
+                        return;
+
+                    }
+
+                    const token =
+                        makeToken();
+
+                    const newPlayer = {
+                        id: token,
+                        name,
+                        party: code,
+                        ws,
+                        x: -42,
+                        y: 1.6,
+                        z: 42
+                    };
+
+                    party.players.set(
+                        token,
+                        newPlayer
+                    );
+
+                    sessions.set(
+                        token,
+                        newPlayer
+                    );
+
+                    player =
+                        newPlayer;
+
+                    send(ws, {
+                        type: "session",
+                        token
+                    });
+
+                    send(ws, {
+                        type: "partyJoined",
+                        code
+                    });
+
+                    broadcastLobby(party);
+
+                    return;
+                }
+
+                /* ---------------------------
+                   RECONNECT
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "reconnect"
+                ) {
+
+                    const token =
+                        String(
+                            data.token || ""
+                        );
+
+                    const code =
+                        String(
+                            data.code || ""
+                        )
+                        .toUpperCase();
+
+                    const existing =
+                        sessions.get(token);
+
+                    const party =
+                        parties.get(code);
+
+                    if (
+                        !existing ||
+                        !party ||
+                        existing.party !== code
+                    ) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "Your party session expired."
+                        });
+
+                        return;
+
+                    }
+
+                    existing.ws =
+                        ws;
+
+                    player =
+                        existing;
+
+                    send(ws, {
+                        type: "session",
+                        token
+                    });
+
+                    if (party.started) {
+
+                        send(ws, {
+                            type: "gameStarted"
+                        });
+
+                    } else {
+
+                        send(ws, {
+                            type: "partyJoined",
+                            code
+                        });
+
+                        broadcastLobby(party);
+
+                    }
+
+                    return;
+                }
+
+                /* ---------------------------
+                   START GAME
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "startGame"
+                ) {
+
+                    if (!player) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "You are not in a party."
+                        });
+
+                        return;
+
+                    }
+
+                    const party =
+                        parties.get(
+                            player.party
+                        );
+
+                    if (!party)
+                        return;
+
+                    if (
+                        party.host !==
+                        player.id
+                    ) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "Only the host can start."
+                        });
+
+                        return;
+
+                    }
+
+                    party.started = true;
+
+                    for (
+                        const p
+                        of party.players.values()
+                    ) {
+
+                        send(
+                            p.ws,
+                            {
+                                type:
+                                    "gameStarted"
+                            }
+                        );
+
+                    }
+
+                    return;
+                }
+
+                /* ---------------------------
+                   GAME JOIN
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "gameJoin"
+                ) {
+
+                    const token =
+                        String(
+                            data.token || ""
+                        );
+
+                    const code =
+                        String(
+                            data.code || ""
+                        )
+                        .toUpperCase();
+
+                    const existing =
+                        sessions.get(token);
+
+                    const party =
+                        parties.get(code);
+
+                    if (
+                        !existing ||
+                        !party ||
+                        existing.party !== code
+                    ) {
+
+                        send(ws, {
+                            type: "error",
+                            message:
+                                "Could not reconnect to the game."
+                        });
+
+                        return;
+
+                    }
+
+                    /*
+                     * Important:
+                     * Replace the old lobby socket
+                     * instead of creating a second player.
+                     */
+
+                    existing.ws =
+                        ws;
+
+                    player =
+                        existing;
+
+                    send(ws, {
+                        type: "gameJoined",
+                        keyCollected:
+                            party.keyCollected
+                    });
+
+                    broadcastPlayers(
+                        party
                     );
 
                     return;
                 }
 
+                /* ---------------------------
+                   PLAYER MOVEMENT
+                --------------------------- */
 
-                handleMessage(
-                    player,
-                    data
-                );
+                if (
+                    data.type ===
+                    "playerUpdate"
+                ) {
+
+                    if (!player)
+                        return;
+
+                    const party =
+                        parties.get(
+                            player.party
+                        );
+
+                    if (!party)
+                        return;
+
+                    player.x =
+                        Number(data.x) || 0;
+
+                    player.y =
+                        Number(data.y) || 1.6;
+
+                    player.z =
+                        Number(data.z) || 0;
+
+                    broadcastPlayers(
+                        party
+                    );
+
+                    return;
+                }
+
+                /* ---------------------------
+                   COLLECT KEY
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "collectKey"
+                ) {
+
+                    if (!player)
+                        return;
+
+                    const party =
+                        parties.get(
+                            player.party
+                        );
+
+                    if (!party)
+                        return;
+
+                    if (
+                        party.keyCollected
+                    )
+                        return;
+
+                    party.keyCollected =
+                        true;
+
+                    for (
+                        const p
+                        of party.players.values()
+                    ) {
+
+                        send(
+                            p.ws,
+                            {
+                                type:
+                                    "keyCollected"
+                            }
+                        );
+
+                    }
+
+                    return;
+                }
+
+                /* ---------------------------
+                   WIN
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "gameWon"
+                ) {
+
+                    if (!player)
+                        return;
+
+                    const party =
+                        parties.get(
+                            player.party
+                        );
+
+                    if (!party)
+                        return;
+
+                    for (
+                        const p
+                        of party.players.values()
+                    ) {
+
+                        send(
+                            p.ws,
+                            {
+                                type:
+                                    "gameWon",
+                                name:
+                                    player.name
+                            }
+                        );
+
+                    }
+
+                    return;
+                }
+
+                /* ---------------------------
+                   GAME OVER
+                --------------------------- */
+
+                if (
+                    data.type ===
+                    "gameOver"
+                ) {
+
+                    if (!player)
+                        return;
+
+                    const party =
+                        parties.get(
+                            player.party
+                        );
+
+                    if (!party)
+                        return;
+
+                    for (
+                        const p
+                        of party.players.values()
+                    ) {
+
+                        send(
+                            p.ws,
+                            {
+                                type:
+                                    "gameOver",
+                                name:
+                                    player.name
+                            }
+                        );
+
+                    }
+
+                    return;
+                }
+
             }
         );
-
 
         ws.on(
             "close",
             () => {
 
-                removePlayer(
-                    player
-                );
-            }
-        );
+                /*
+                 * Only remove the player if this
+                 * socket is still their current socket.
+                 */
+
+                if (
+                    player &&
+                    player.ws === ws
+                ) {
+
+                    removePlayer(
+                        player
+                    );
 
-
-        ws.on(
-            "error",
-            () => {
-
-                removePlayer(
-                    player
-                );
-            }
-        );
-    }
-);
-
-
-// ============================================================
-// MESSAGE HANDLER
-// ============================================================
-
-function handleMessage(
-    player,
-    data
-) {
-
-    if (
-        data.type ===
-        "createParty"
-    ) {
-
-        createParty(
-            player,
-            data.name
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "joinParty"
-    ) {
-
-        joinParty(
-            player,
-            data.code,
-            data.name
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "startGame"
-    ) {
-
-        startGame(
-            player
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "gameJoin"
-    ) {
-
-        gameJoin(
-            player,
-            data.code,
-            data.name
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "playerUpdate"
-    ) {
-
-        updatePlayer(
-            player,
-            data
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "collectKey"
-    ) {
-
-        collectKey(
-            player
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "gameWon"
-    ) {
-
-        gameWon(
-            player
-        );
-
-        return;
-    }
-
-
-    if (
-        data.type ===
-        "gameOver"
-    ) {
-
-        gameOver(
-            player
-        );
-
-        return;
-    }
-}
-
-
-// ============================================================
-// CREATE PARTY
-// ============================================================
-
-function createParty(
-    player,
-    name
-) {
-
-    if (player.party) {
-
-        send(
-            player.ws,
-            {
-                type:
-                    "error",
-
-                message:
-                    "You are already in a party."
-            }
-        );
-
-        return;
-    }
-
-
-    const code =
-        makeCode();
-
-
-    const party = {
-
-        code,
-
-        hostId:
-            player.id,
-
-        started:
-            false,
-
-        keyCollected:
-            false,
-
-        players:
-            new Map()
-    };
-
-
-    player.name =
-        cleanName(name);
-
-    player.party =
-        code;
-
-
-    party.players.set(
-        player.id,
-        player
-    );
-
-
-    parties.set(
-        code,
-        party
-    );
-
-
-    send(
-        player.ws,
-        {
-
-            type:
-                "partyCreated",
-
-            playerId:
-                player.id,
-
-            code
-        }
-    );
-
-
-    sendLobby(
-        party
-    );
-}
-
-
-// ============================================================
-// JOIN PARTY
-// ============================================================
-
-function joinParty(
-    player,
-    code,
-    name
-) {
-
-    code =
-        String(
-            code || ""
-        )
-        .toUpperCase()
-        .trim();
-
-
-    const party =
-        parties.get(code);
-
-
-    if (!party) {
-
-        send(
-            player.ws,
-            {
-
-                type:
-                    "error",
-
-                message:
-                    "Party not found."
-            }
-        );
-
-        return;
-    }
-
-
-    if (
-        party.players.size >= 8
-    ) {
-
-        send(
-            player.ws,
-            {
-
-                type:
-                    "error",
-
-                message:
-                    "Party is full."
-            }
-        );
-
-        return;
-    }
-
-
-    if (party.started) {
-
-        send(
-            player.ws,
-            {
-
-                type:
-                    "error",
-
-                message:
-                    "The game has already started."
-            }
-        );
-
-        return;
-    }
-
-
-    player.name =
-        cleanName(name);
-
-    player.party =
-        code;
-
-
-    party.players.set(
-        player.id,
-        player
-    );
-
-
-    send(
-        player.ws,
-        {
-
-            type:
-                "partyJoined",
-
-            playerId:
-                player.id,
-
-            code
-        }
-    );
-
-
-    sendLobby(
-        party
-    );
-}
-
-
-// ============================================================
-// START GAME
-// ============================================================
-
-function startGame(
-    player
-) {
-
-    if (!player.party) {
-        return;
-    }
-
-
-    const party =
-        parties.get(
-            player.party
-        );
-
-
-    if (!party) {
-        return;
-    }
-
-
-    if (
-        party.hostId !==
-        player.id
-    ) {
-
-        send(
-            player.ws,
-            {
-
-                type:
-                    "error",
-
-                message:
-                    "Only the host can start the game."
-            }
-        );
-
-        return;
-    }
-
-
-    party.started =
-        true;
-
-    party.keyCollected =
-        false;
-
-
-    broadcast(
-        party,
-        {
-            type:
-                "gameStarted"
-        }
-    );
-}
-
-
-// ============================================================
-// GAME JOIN
-// ============================================================
-
-function gameJoin(
-    player,
-    code,
-    name
-) {
-
-    code =
-        String(
-            code || ""
-        )
-        .toUpperCase()
-        .trim();
-
-
-    const party =
-        parties.get(code);
-
-
-    if (!party) {
-
-        send(
-            player.ws,
-            {
-
-                type:
-                    "error",
-
-                message:
-                    "Party no longer exists."
-            }
-        );
-
-        return;
-    }
-
-
-    // If already connected through lobby,
-    // don't add a duplicate player.
-
-    if (
-        party.players.has(
-            player.id
-        )
-    ) {
-
-        player.name =
-            cleanName(name);
-
-    } else {
-
-        if (
-            party.players.size >= 8
-        ) {
-
-            send(
-                player.ws,
-                {
-
-                    type:
-                        "error",
-
-                    message:
-                        "Party is full."
                 }
-            );
 
-            return;
-        }
-
-        player.name =
-            cleanName(name);
-
-        player.party =
-            code;
-
-        party.players.set(
-            player.id,
-            player
-        );
-    }
-
-
-    send(
-        player.ws,
-        {
-
-            type:
-                "gameJoined",
-
-            playerId:
-                player.id
-        }
-    );
-
-
-    sendWorldState(
-        party
-    );
-
-
-    broadcastPlayers(
-        party
-    );
-}
-
-
-// ============================================================
-// PLAYER MOVEMENT
-// ============================================================
-
-function updatePlayer(
-    player,
-    data
-) {
-
-    if (!player.party) {
-        return;
-    }
-
-
-    const party =
-        parties.get(
-            player.party
-        );
-
-
-    if (!party) {
-        return;
-    }
-
-
-    const x =
-        Number(data.x);
-
-    const z =
-        Number(data.z);
-
-    const yaw =
-        Number(data.yaw);
-
-
-    if (
-        Number.isFinite(x)
-    ) {
-
-        player.x =
-            Math.max(
-                -59,
-                Math.min(
-                    59,
-                    x
-                )
-            );
-    }
-
-
-    if (
-        Number.isFinite(z)
-    ) {
-
-        player.z =
-            Math.max(
-                -59,
-                Math.min(
-                    59,
-                    z
-                )
-            );
-    }
-
-
-    if (
-        Number.isFinite(yaw)
-    ) {
-
-        player.yaw =
-            yaw;
-    }
-}
-
-
-// ============================================================
-// BROADCAST PLAYER POSITIONS
-// ============================================================
-
-setInterval(
-    () => {
-
-        for (
-            const party
-            of parties.values()
-        ) {
-
-            if (
-                !party.started
-            ) {
-                continue;
             }
+        );
 
-            broadcastPlayers(
-                party
-            );
-        }
-
-    },
-    50
+    }
 );
-
-
-function broadcastPlayers(
-    party
-) {
-
-    broadcast(
-        party,
-        {
-
-            type:
-                "players",
-
-            players:
-                Array.from(
-                    party.players.values()
-                ).map(
-                    player => ({
-
-                        id:
-                            player.id,
-
-                        name:
-                            player.name,
-
-                        x:
-                            player.x,
-
-                        z:
-                            player.z,
-
-                        yaw:
-                            player.yaw
-                    })
-                )
-        }
-    );
-}
-
-
-// ============================================================
-// KEY
-// ============================================================
-
-function collectKey(
-    player
-) {
-
-    if (!player.party) {
-        return;
-    }
-
-
-    const party =
-        parties.get(
-            player.party
-        );
-
-
-    if (!party) {
-        return;
-    }
-
-
-    if (
-        party.keyCollected
-    ) {
-        return;
-    }
-
-
-    party.keyCollected =
-        true;
-
-
-    sendWorldState(
-        party
-    );
-}
-
-
-function sendWorldState(
-    party
-) {
-
-    broadcast(
-        party,
-        {
-
-            type:
-                "worldState",
-
-            keyCollected:
-                party.keyCollected
-        }
-    );
-}
-
-
-// ============================================================
-// WIN / LOSE
-// ============================================================
-
-function gameWon(
-    player
-) {
-
-    if (!player.party) {
-        return;
-    }
-
-
-    const party =
-        parties.get(
-            player.party
-        );
-
-
-    if (!party) {
-        return;
-    }
-
-
-    broadcast(
-        party,
-        {
-
-            type:
-                "gameWon"
-        }
-    );
-}
-
-
-function gameOver(
-    player
-) {
-
-    if (!player.party) {
-        return;
-    }
-
-
-    const party =
-        parties.get(
-            player.party
-        );
-
-
-    if (!party) {
-        return;
-    }
-
-
-    broadcast(
-        party,
-        {
-
-            type:
-                "gameOver",
-
-            message:
-                "A player was caught."
-        }
-    );
-}
-
-
-// ============================================================
-// START SERVER
-// ============================================================
 
 server.listen(
     PORT,
     () => {
 
         console.log(
-            `THE BACKROOMS SERVER RUNNING ON PORT ${PORT}`
+            `THE BACKROOMS server running on port ${PORT}`
         );
 
-        console.log(
-            `http://localhost:${PORT}`
-        );
     }
 );
