@@ -4,21 +4,17 @@ const path = require("path");
 const crypto = require("crypto");
 const WebSocket = require("ws");
 
-
 const PORT =
     process.env.PORT || 3000;
 
-
 const parties =
     new Map();
-
 
 const sessions =
     new Map();
 
 
 const MIME = {
-
     ".html":
         "text/html; charset=utf-8",
 
@@ -45,7 +41,6 @@ const MIME = {
 
     ".ico":
         "image/x-icon"
-
 };
 
 
@@ -56,18 +51,16 @@ const MIME = {
 function send(
     ws,
     data
-) {
+){
 
-    if (
+    if(
         ws &&
         ws.readyState ===
             WebSocket.OPEN
-    ) {
+    ){
 
         ws.send(
-            JSON.stringify(
-                data
-            )
+            JSON.stringify(data)
         );
 
     }
@@ -82,12 +75,12 @@ function send(
 function broadcast(
     party,
     data
-) {
+){
 
-    for (
+    for(
         const player
         of party.players.values()
-    ) {
+    ){
 
         send(
             player.ws,
@@ -103,25 +96,24 @@ function broadcast(
    CODE
 ========================================================= */
 
-function makeCode() {
+function makeCode(){
 
     const chars =
         "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
-
     let code;
 
 
-    do {
+    do{
 
         code = "";
 
 
-        for (
+        for(
             let i = 0;
             i < 5;
             i++
-        ) {
+        ){
 
             code +=
                 chars[
@@ -133,7 +125,7 @@ function makeCode() {
 
         }
 
-    } while (
+    }while(
         parties.has(code)
     );
 
@@ -147,15 +139,11 @@ function makeCode() {
    TOKEN
 ========================================================= */
 
-function makeToken() {
+function makeToken(){
 
     return crypto
-        .randomBytes(
-            24
-        )
-        .toString(
-            "hex"
-        );
+        .randomBytes(24)
+        .toString("hex");
 
 }
 
@@ -166,22 +154,18 @@ function makeToken() {
 
 function cleanName(
     name
-) {
+){
 
     const result =
         String(
-            name ||
-            "Player"
+            name || "Player"
         )
         .replace(
             /[^a-zA-Z0-9 _-]/g,
             ""
         )
         .trim()
-        .slice(
-            0,
-            16
-        );
+        .slice(0,16);
 
 
     return result ||
@@ -196,7 +180,7 @@ function cleanName(
 
 function getLobbyPlayers(
     party
-) {
+){
 
     return [
         ...party.players.values()
@@ -221,7 +205,7 @@ function getLobbyPlayers(
 
 function sendLobby(
     party
-) {
+){
 
     const players =
         getLobbyPlayers(
@@ -229,10 +213,10 @@ function sendLobby(
         );
 
 
-    for (
+    for(
         const player
         of party.players.values()
-    ) {
+    ){
 
         send(
             player.ws,
@@ -268,7 +252,7 @@ function sendLobby(
 
 function sendPlayers(
     party
-) {
+){
 
     const players =
         [
@@ -283,23 +267,17 @@ function sendPlayers(
                     player.name,
 
                 x:
-                    Number.isFinite(
-                        player.x
-                    )
+                    Number.isFinite(player.x)
                         ? player.x
                         : -50,
 
                 y:
-                    Number.isFinite(
-                        player.y
-                    )
+                    Number.isFinite(player.y)
                         ? player.y
                         : 1.6,
 
                 z:
-                    Number.isFinite(
-                        player.z
-                    )
+                    Number.isFinite(player.z)
                         ? player.z
                         : 40
 
@@ -324,17 +302,15 @@ function sendPlayers(
 
 
 /* =========================================================
-   REMOVE PLAYER
+   REMOVE
 ========================================================= */
 
 function removePlayer(
     player
-) {
+){
 
-    if (!player) {
-
+    if(!player){
         return;
-
     }
 
 
@@ -344,33 +320,28 @@ function removePlayer(
         );
 
 
-    if (!party) {
-
+    if(!party){
         return;
-
     }
 
 
-    if (
+    if(
         party.players.get(
             player.id
-        ) !==
-        player
-    ) {
+        ) !== player
+    ){
 
         return;
-
     }
 
 
-    if (
+    if(
         player.disconnectTimer
-    ) {
+    ){
 
         clearTimeout(
             player.disconnectTimer
         );
-
 
         player.disconnectTimer =
             null;
@@ -388,15 +359,10 @@ function removePlayer(
     );
 
 
-    /*
-     * Give party to next player
-     * if the host leaves.
-     */
-
-    if (
+    if(
         party.host ===
         player.id
-    ) {
+    ){
 
         const next =
             party.players
@@ -404,9 +370,9 @@ function removePlayer(
                 .next();
 
 
-        if (
+        if(
             !next.done
-        ) {
+        ){
 
             party.host =
                 next.value.id;
@@ -416,14 +382,10 @@ function removePlayer(
     }
 
 
-    /*
-     * Delete empty party.
-     */
-
-    if (
+    if(
         party.players.size ===
         0
-    ) {
+    ){
 
         parties.delete(
             party.code
@@ -453,23 +415,16 @@ function removePlayer(
 function handleDisconnect(
     player,
     socket
-) {
+){
 
-    if (!player) {
-
+    if(!player){
         return;
-
     }
 
 
-    /*
-     * Socket has been replaced by a new one.
-     */
-
-    if (
-        player.ws !==
-        socket
-    ) {
+    if(
+        player.ws !== socket
+    ){
 
         return;
 
@@ -482,30 +437,28 @@ function handleDisconnect(
         );
 
 
-    if (!party) {
-
+    if(!party){
         return;
-
     }
 
 
     /*
-     * After game starts, give browser
-     * time to move from index.html to
-     * game.html.
+     * Once the game has started,
+     * keep the player session alive while
+     * index.html changes to game.html.
      */
 
-    if (
+    if(
         party.started
-    ) {
+    ){
 
         const oldSocket =
             socket;
 
 
-        if (
+        if(
             player.disconnectTimer
-        ) {
+        ){
 
             clearTimeout(
                 player.disconnectTimer
@@ -516,13 +469,12 @@ function handleDisconnect(
 
         player.disconnectTimer =
             setTimeout(
-
                 () => {
 
-                    if (
+                    if(
                         player.ws !==
                         oldSocket
-                    ) {
+                    ){
 
                         return;
 
@@ -534,9 +486,7 @@ function handleDisconnect(
                     );
 
                 },
-
                 60000
-
             );
 
 
@@ -553,12 +503,11 @@ function handleDisconnect(
 
 
 /* =========================================================
-   HTTP SERVER
+   HTTP
 ========================================================= */
 
 const server =
     http.createServer(
-
         (
             req,
             res
@@ -568,10 +517,9 @@ const server =
                 req.url.split("?")[0];
 
 
-            if (
-                requestPath ===
-                "/"
-            ) {
+            if(
+                requestPath === "/"
+            ){
 
                 requestPath =
                     "/index.html";
@@ -588,21 +536,14 @@ const server =
                 );
 
 
-            if (
+            if(
                 !filePath.startsWith(
                     __dirname
                 )
-            ) {
+            ){
 
-                res.writeHead(
-                    403
-                );
-
-
-                res.end(
-                    "Forbidden"
-                );
-
+                res.writeHead(403);
+                res.end("Forbidden");
 
                 return;
 
@@ -610,27 +551,16 @@ const server =
 
 
             fs.readFile(
-
                 filePath,
-
                 (
                     err,
                     data
                 ) => {
 
-                    if (
-                        err
-                    ) {
+                    if(err){
 
-                        res.writeHead(
-                            404
-                        );
-
-
-                        res.end(
-                            "Not Found"
-                        );
-
+                        res.writeHead(404);
+                        res.end("Not Found");
 
                         return;
 
@@ -644,13 +574,10 @@ const server =
 
 
                     res.writeHead(
-
                         200,
-
                         {
 
                             "Content-Type":
-
                                 MIME[ext] ||
                                 "application/octet-stream",
 
@@ -658,33 +585,25 @@ const server =
                                 "no-store"
 
                         }
-
                     );
 
 
-                    res.end(
-                        data
-                    );
+                    res.end(data);
 
                 }
-
             );
 
         }
-
     );
 
 
 /* =========================================================
-   WEBSOCKET SERVER
+   WEBSOCKET
 ========================================================= */
 
 const wss =
     new WebSocket.Server({
-
-        server:
-            server
-
+        server
     });
 
 
@@ -703,29 +622,23 @@ wss.on(
                 let data;
 
 
-                try {
+                try{
 
                     data =
                         JSON.parse(
                             raw.toString()
                         );
 
-                }
-                catch {
+                }catch{
 
                     send(
                         ws,
                         {
-
-                            type:
-                                "error",
-
+                            type:"error",
                             message:
                                 "Invalid message."
-
                         }
                     );
-
 
                     return;
 
@@ -736,28 +649,21 @@ wss.on(
                    CREATE PARTY
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "createParty"
-                ) {
+                ){
 
-                    if (
-                        player
-                    ) {
+                    if(player){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "You are already connected."
-
                             }
                         );
-
 
                         return;
 
@@ -855,13 +761,8 @@ wss.on(
                     send(
                         ws,
                         {
-
-                            type:
-                                "session",
-
-                            token:
-                                token
-
+                            type:"session",
+                            token:token
                         }
                     );
 
@@ -869,19 +770,10 @@ wss.on(
                     send(
                         ws,
                         {
-
-                            type:
-                                "partyCreated",
-
-                            code:
-                                code,
-
-                            token:
-                                token,
-
-                            host:
-                                true
-
+                            type:"partyCreated",
+                            code:code,
+                            token:token,
+                            host:true
                         }
                     );
 
@@ -900,28 +792,21 @@ wss.on(
                    JOIN PARTY
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "joinParty"
-                ) {
+                ){
 
-                    if (
-                        player
-                    ) {
+                    if(player){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "You are already connected."
-
                             }
                         );
-
 
                         return;
 
@@ -930,8 +815,7 @@ wss.on(
 
                     const code =
                         String(
-                            data.code ||
-                            ""
+                            data.code || ""
                         )
                         .trim()
                         .toUpperCase();
@@ -949,70 +833,52 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
+                    if(!party){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "Party not found."
-
                             }
                         );
-
 
                         return;
 
                     }
 
 
-                    if (
+                    if(
                         party.started
-                    ) {
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "The game has already started."
-
                             }
                         );
-
 
                         return;
 
                     }
 
 
-                    if (
-                        party.players.size >=
-                        8
-                    ) {
+                    if(
+                        party.players.size >= 8
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "Party is full."
-
                             }
                         );
-
 
                         return;
 
@@ -1071,13 +937,8 @@ wss.on(
                     send(
                         ws,
                         {
-
-                            type:
-                                "session",
-
-                            token:
-                                token
-
+                            type:"session",
+                            token:token
                         }
                     );
 
@@ -1085,19 +946,10 @@ wss.on(
                     send(
                         ws,
                         {
-
-                            type:
-                                "partyJoined",
-
-                            code:
-                                code,
-
-                            token:
-                                token,
-
-                            host:
-                                false
-
+                            type:"partyJoined",
+                            code:code,
+                            token:token,
+                            host:false
                         }
                     );
 
@@ -1116,22 +968,20 @@ wss.on(
                    RECONNECT
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "reconnect"
-                ) {
+                ){
 
                     const token =
                         String(
-                            data.token ||
-                            ""
+                            data.token || ""
                         );
 
 
                     const code =
                         String(
-                            data.code ||
-                            ""
+                            data.code || ""
                         )
                         .trim()
                         .toUpperCase();
@@ -1149,40 +999,34 @@ wss.on(
                         );
 
 
-                    if (
+                    if(
                         !existing ||
                         !party ||
                         existing.party !==
                             code
-                    ) {
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "Your party session expired."
-
                             }
                         );
-
 
                         return;
 
                     }
 
 
-                    if (
+                    if(
                         existing.disconnectTimer
-                    ) {
+                    ){
 
                         clearTimeout(
                             existing.disconnectTimer
                         );
-
 
                         existing.disconnectTimer =
                             null;
@@ -1202,11 +1046,10 @@ wss.on(
                         existing;
 
 
-                    if (
+                    if(
                         oldSocket &&
-                        oldSocket !==
-                            ws
-                    ) {
+                        oldSocket !== ws
+                    ){
 
                         oldSocket._replaced =
                             true;
@@ -1217,57 +1060,37 @@ wss.on(
                     send(
                         ws,
                         {
-
-                            type:
-                                "session",
-
-                            token:
-                                token
-
+                            type:"session",
+                            token:token
                         }
                     );
 
 
-                    if (
+                    if(
                         party.started
-                    ) {
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "gameStarted",
-
-                                code:
-                                    code,
-
-                                token:
-                                    token
-
+                                type:"gameStarted",
+                                code:code,
+                                token:token
                             }
                         );
 
                     }
-                    else {
+                    else{
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "partyJoined",
-
-                                code:
-                                    code,
-
-                                token:
-                                    token,
-
+                                type:"partyJoined",
+                                code:code,
+                                token:token,
                                 host:
                                     existing.id ===
                                     party.host
-
                             }
                         );
 
@@ -1288,22 +1111,20 @@ wss.on(
                    CHECK PARTY
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "checkParty"
-                ) {
+                ){
 
                     const token =
                         String(
-                            data.token ||
-                            ""
+                            data.token || ""
                         );
 
 
                     const code =
                         String(
-                            data.code ||
-                            ""
+                            data.code || ""
                         )
                         .trim()
                         .toUpperCase();
@@ -1321,26 +1142,21 @@ wss.on(
                         );
 
 
-                    if (
+                    if(
                         !existing ||
                         !party ||
                         existing.party !==
                             code
-                    ) {
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "Your party session could not be found."
-
                             }
                         );
-
 
                         return;
 
@@ -1355,14 +1171,13 @@ wss.on(
                         existing;
 
 
-                    if (
+                    if(
                         existing.disconnectTimer
-                    ) {
+                    ){
 
                         clearTimeout(
                             existing.disconnectTimer
                         );
-
 
                         existing.disconnectTimer =
                             null;
@@ -1399,28 +1214,21 @@ wss.on(
                    START GAME
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "startGame"
-                ) {
+                ){
 
-                    if (
-                        !player
-                    ) {
+                    if(!player){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "You are not in a party."
-
                             }
                         );
-
 
                         return;
 
@@ -1433,42 +1241,26 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
+                    if(!party){
 
                         return;
 
                     }
 
 
-                    if (
+                    if(
                         player.id !==
                         party.host
-                    ) {
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "Only the host can start the game."
-
                             }
                         );
-
-
-                        return;
-
-                    }
-
-
-                    if (
-                        party.started
-                    ) {
 
                         return;
 
@@ -1479,10 +1271,10 @@ wss.on(
                         true;
 
 
-                    for (
+                    for(
                         const p
                         of party.players.values()
-                    ) {
+                    ){
 
                         send(
                             p.ws,
@@ -1512,22 +1304,20 @@ wss.on(
                    GAME JOIN
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "gameJoin"
-                ) {
+                ){
 
                     const token =
                         String(
-                            data.token ||
-                            ""
+                            data.token || ""
                         );
 
 
                     const code =
                         String(
-                            data.code ||
-                            ""
+                            data.code || ""
                         )
                         .trim()
                         .toUpperCase();
@@ -1545,40 +1335,34 @@ wss.on(
                         );
 
 
-                    if (
+                    if(
                         !existing ||
                         !party ||
                         existing.party !==
                             code
-                    ) {
+                    ){
 
                         send(
                             ws,
                             {
-
-                                type:
-                                    "error",
-
+                                type:"error",
                                 message:
                                     "Could not reconnect to your party."
-
                             }
                         );
-
 
                         return;
 
                     }
 
 
-                    if (
+                    if(
                         existing.disconnectTimer
-                    ) {
+                    ){
 
                         clearTimeout(
                             existing.disconnectTimer
                         );
-
 
                         existing.disconnectTimer =
                             null;
@@ -1598,11 +1382,10 @@ wss.on(
                         existing;
 
 
-                    if (
+                    if(
                         oldSocket &&
-                        oldSocket !==
-                            ws
-                    ) {
+                        oldSocket !== ws
+                    ){
 
                         oldSocket._replaced =
                             true;
@@ -1644,17 +1427,13 @@ wss.on(
                    POSITION
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "playerUpdate"
-                ) {
+                ){
 
-                    if (
-                        !player
-                    ) {
-
+                    if(!player){
                         return;
-
                     }
 
 
@@ -1664,12 +1443,8 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
-
+                    if(!party){
                         return;
-
                     }
 
 
@@ -1691,9 +1466,9 @@ wss.on(
                         );
 
 
-                    if (
+                    if(
                         Number.isFinite(x)
-                    ) {
+                    ){
 
                         player.x =
                             Math.max(
@@ -1707,9 +1482,9 @@ wss.on(
                     }
 
 
-                    if (
+                    if(
                         Number.isFinite(y)
-                    ) {
+                    ){
 
                         player.y =
                             y;
@@ -1717,9 +1492,9 @@ wss.on(
                     }
 
 
-                    if (
+                    if(
                         Number.isFinite(z)
-                    ) {
+                    ){
 
                         player.z =
                             Math.max(
@@ -1747,17 +1522,13 @@ wss.on(
                    COLLECT KEY / FUSE
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "collectKey"
-                ) {
+                ){
 
-                    if (
-                        !player
-                    ) {
-
+                    if(!player){
                         return;
-
                     }
 
 
@@ -1767,18 +1538,14 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
-
+                    if(!party){
                         return;
-
                     }
 
 
-                    if (
+                    if(
                         party.keyCollected
-                    ) {
+                    ){
 
                         return;
 
@@ -1792,10 +1559,8 @@ wss.on(
                     broadcast(
                         party,
                         {
-
                             type:
                                 "keyCollected"
-
                         }
                     );
 
@@ -1809,17 +1574,13 @@ wss.on(
                    CHANGE LEVEL
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "changeLevel"
-                ) {
+                ){
 
-                    if (
-                        !player
-                    ) {
-
+                    if(!player){
                         return;
-
                     }
 
 
@@ -1829,18 +1590,14 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
-
+                    if(!party){
                         return;
-
                     }
 
 
-                    if (
+                    if(
                         !party.started
-                    ) {
+                    ){
 
                         return;
 
@@ -1848,22 +1605,13 @@ wss.on(
 
 
                     const current =
-                        party.level ||
-                        0;
+                        party.level || 0;
 
 
-                    /*
-                     * The item must be found on
-                     * Levels 0 and 1 first.
-                     *
-                     * Level 2 doesn't require it.
-                     */
-
-                    if (
-                        current <
-                            2 &&
+                    if(
+                        current < 2 &&
                         !party.keyCollected
-                    ) {
+                    ){
 
                         return;
 
@@ -1874,9 +1622,9 @@ wss.on(
                         current + 1;
 
 
-                    if (
+                    if(
                         next > 2
-                    ) {
+                    ){
 
                         return;
 
@@ -1891,29 +1639,15 @@ wss.on(
                         false;
 
 
-                    /*
-                     * Tell EVERYONE.
-                     */
-
-                    for (
-                        const p
-                        of party.players.values()
-                    ) {
-
-                        send(
-                            p.ws,
-                            {
-
-                                type:
-                                    "levelChanged",
-
-                                level:
-                                    party.level
-
-                            }
-                        );
-
-                    }
+                    broadcast(
+                        party,
+                        {
+                            type:
+                                "levelChanged",
+                            level:
+                                party.level
+                        }
+                    );
 
 
                     return;
@@ -1925,17 +1659,13 @@ wss.on(
                    WIN
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "gameWon"
-                ) {
+                ){
 
-                    if (
-                        !player
-                    ) {
-
+                    if(!player){
                         return;
-
                     }
 
 
@@ -1945,12 +1675,8 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
-
+                    if(!party){
                         return;
-
                     }
 
 
@@ -1977,17 +1703,13 @@ wss.on(
                    GAME OVER
                 ================================================= */
 
-                if (
+                if(
                     data.type ===
                     "gameOver"
-                ) {
+                ){
 
-                    if (
-                        !player
-                    ) {
-
+                    if(!player){
                         return;
-
                     }
 
 
@@ -1997,12 +1719,8 @@ wss.on(
                         );
 
 
-                    if (
-                        !party
-                    ) {
-
+                    if(!party){
                         return;
-
                     }
 
 
@@ -2028,17 +1746,13 @@ wss.on(
         );
 
 
-        /* =====================================================
-           CLOSE
-        ===================================================== */
-
         ws.on(
             "close",
             () => {
 
-                if (
+                if(
                     ws._replaced
-                ) {
+                ){
 
                     return;
 
@@ -2058,9 +1772,9 @@ wss.on(
             "error",
             () => {
 
-                if (
+                if(
                     ws._replaced
-                ) {
+                ){
 
                     return;
 
@@ -2088,19 +1802,12 @@ server.listen(
     () => {
 
         console.log(
-            "================================="
-        );
-
-        console.log(
             "THE BACKROOMS SERVER STARTED"
         );
 
         console.log(
-            `PORT: ${PORT}`
-        );
-
-        console.log(
-            "================================="
+            "PORT:",
+            PORT
         );
 
     }
