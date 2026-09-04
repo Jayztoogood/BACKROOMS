@@ -2,257 +2,170 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>THE BACKROOMS</title>
 
 <style>
+*{box-sizing:border-box}
 
-* {
-    box-sizing: border-box;
+html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:Arial,Helvetica,sans-serif;
+    color:#fff;
 }
 
-html,
-body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-
-    font-family: Arial, Helvetica, sans-serif;
-
-    background: #11100a;
-    color: #fff;
-}
-
-body {
+body{
     background:
-        linear-gradient(
-            rgba(40,35,10,.15),
-            rgba(40,35,10,.35)
-        ),
+        linear-gradient(rgba(40,35,10,.15),rgba(40,35,10,.35)),
         repeating-linear-gradient(
             90deg,
-            #a9a35b 0px,
+            #a9a35b 0,
             #aaa45e 80px,
             #9f9954 160px
         );
 }
 
-.noise {
-    position: fixed;
-    inset: 0;
-
-    pointer-events: none;
-
-    opacity: .08;
-
+.noise{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    opacity:.08;
     background-image:
         url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
 }
 
-.center {
-    width: 100%;
-    height: 100%;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    padding: 20px;
+.center{
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
 }
 
-.panel {
-    width: 460px;
-    max-width: 100%;
-
-    padding: 38px;
-
-    background: rgba(20,18,7,.88);
-
-    border:
-        2px solid
-        rgba(255,255,255,.12);
-
-    box-shadow:
-        0 20px 70px rgba(0,0,0,.55);
-
-    text-align: center;
-
-    backdrop-filter: blur(4px);
+.panel{
+    width:460px;
+    max-width:100%;
+    padding:38px;
+    background:rgba(20,18,7,.90);
+    border:2px solid rgba(255,255,255,.12);
+    box-shadow:0 20px 70px rgba(0,0,0,.55);
+    text-align:center;
+    backdrop-filter:blur(4px);
 }
 
-h1 {
-    margin: 0;
-
-    font-size: 52px;
-
-    letter-spacing: 7px;
-
-    color: #ddd78b;
-
-    text-shadow:
-        0 0 15px
-        rgba(255,240,100,.25);
+h1{
+    margin:0;
+    font-size:52px;
+    letter-spacing:7px;
+    color:#ddd78b;
 }
 
-.subtitle {
-    margin:
-        8px
-        0
-        30px;
-
-    color: #aaa;
-
-    letter-spacing: 3px;
-
-    font-size: 12px;
+.subtitle{
+    margin:8px 0 30px;
+    color:#aaa;
+    letter-spacing:3px;
+    font-size:12px;
 }
 
-input {
-    width: 100%;
-
-    padding: 15px;
-
-    margin-bottom: 12px;
-
-    border:
-        1px solid
-        #77704a;
-
-    background: #16150d;
-
-    color: white;
-
-    font-size: 16px;
-
-    outline: none;
+input{
+    width:100%;
+    padding:15px;
+    margin-bottom:12px;
+    border:1px solid #77704a;
+    background:#16150d;
+    color:#fff;
+    font-size:16px;
+    outline:none;
 }
 
-input:focus {
-    border-color: #d4c965;
+input:focus{
+    border-color:#d4c965;
 }
 
-button {
-    width: 100%;
-
-    padding: 15px;
-
-    margin-top: 10px;
-
-    border: 0;
-
-    background: #b9ae57;
-
-    color: #15140b;
-
-    font-size: 16px;
-
-    font-weight: bold;
-
-    cursor: pointer;
-
-    transition: .15s;
+button{
+    width:100%;
+    padding:15px;
+    margin-top:10px;
+    border:0;
+    background:#b9ae57;
+    color:#15140b;
+    font-size:16px;
+    font-weight:bold;
+    cursor:pointer;
 }
 
-button:hover {
-    background: #d8cc6b;
-
-    transform:
-        translateY(-1px);
+button:hover{
+    background:#d8cc6b;
 }
 
-button.secondary {
-    background: #383621;
-
-    color: #ddd;
+button:disabled{
+    opacity:.55;
+    cursor:not-allowed;
 }
 
-button.secondary:hover {
-    background: #4b482b;
+button.secondary{
+    background:#383621;
+    color:#ddd;
 }
 
-button:disabled {
-    opacity: .55;
-
-    cursor: not-allowed;
-
-    transform: none;
+button.secondary:hover{
+    background:#4b482b;
 }
 
-.hidden {
-    display: none !important;
+.hidden{
+    display:none!important;
 }
 
-.code {
-    font-size: 42px;
-
-    font-weight: bold;
-
-    letter-spacing: 10px;
-
-    color: #eee9a3;
-
-    margin:
-        15px
-        0
-        5px;
+.code{
+    font-size:42px;
+    font-weight:bold;
+    letter-spacing:10px;
+    color:#eee9a3;
+    margin:15px 0 5px;
 }
 
-.small {
-    color: #999;
-
-    font-size: 13px;
+.small{
+    color:#999;
+    font-size:13px;
 }
 
-.players {
-    margin:
-        25px
-        0;
-
-    text-align: left;
+.players{
+    margin:25px 0;
+    text-align:left;
 }
 
-.player {
-    display: flex;
-
-    justify-content: space-between;
-
-    padding: 11px 12px;
-
-    margin-bottom: 5px;
-
-    background:
-        rgba(255,255,255,.05);
+.player{
+    display:flex;
+    justify-content:space-between;
+    padding:11px 12px;
+    margin-bottom:5px;
+    background:rgba(255,255,255,.05);
 }
 
-.host {
-    color: #e6d96e;
+.host{
+    color:#e6d96e;
 }
 
-#error,
-#partyError {
-    color: #ff7777;
-
-    min-height: 20px;
-
-    margin-top: 12px;
-
-    font-size: 14px;
+#error,#partyError{
+    color:#ff7777;
+    min-height:20px;
+    margin-top:12px;
+    font-size:14px;
 }
 
-.status {
-    margin-top: 15px;
-
-    font-size: 12px;
-
-    color: #777;
+.status{
+    margin-top:15px;
+    font-size:12px;
+    color:#777;
 }
 
-#startBtn {
-    display: none;
+#startBtn{
+    display:none;
 }
-
 </style>
 </head>
 
@@ -262,16 +175,9 @@ button:disabled {
 
 <div class="center">
 
-    <!-- MAIN MENU -->
+    <div class="panel" id="menu">
 
-    <div
-        class="panel"
-        id="menu"
-    >
-
-        <h1>
-            THE BACKROOMS
-        </h1>
+        <h1>THE BACKROOMS</h1>
 
         <div class="subtitle">
             THERE IS NO EXIT
@@ -304,7 +210,6 @@ button:disabled {
                 id="codeInput"
                 maxlength="5"
                 placeholder="PARTY CODE"
-                style="text-transform:uppercase"
                 autocomplete="off"
             >
 
@@ -325,8 +230,6 @@ button:disabled {
 
     </div>
 
-
-    <!-- PARTY -->
 
     <div
         class="panel hidden"
@@ -376,27 +279,16 @@ button:disabled {
 const SERVER =
     "wss://backrooms-avnx.onrender.com";
 
-
-/* =========================================================
-   STATE
-========================================================= */
-
 let ws = null;
 
 let playerName =
-    localStorage.getItem(
-        "playerName"
-    ) || "";
+    localStorage.getItem("playerName") || "";
 
 let sessionToken =
-    localStorage.getItem(
-        "backroomsSession"
-    ) || "";
+    localStorage.getItem("backroomsSession") || "";
 
 let partyCode =
-    localStorage.getItem(
-        "partyCode"
-    ) || "";
+    localStorage.getItem("partyCode") || "";
 
 let isHost = false;
 
@@ -404,107 +296,102 @@ let leaving = false;
 
 let gameStarting = false;
 
-let partyStatusTimer = null;
+let partyCheckTimer = null;
 
 
-/* =========================================================
-   ELEMENTS
-========================================================= */
+/* ELEMENTS */
 
 const menu =
-    document.getElementById(
-        "menu"
-    );
+    document.getElementById("menu");
 
 const party =
-    document.getElementById(
-        "party"
-    );
+    document.getElementById("party");
 
 const nameInput =
-    document.getElementById(
-        "name"
-    );
+    document.getElementById("name");
 
 const codeInput =
-    document.getElementById(
-        "codeInput"
-    );
+    document.getElementById("codeInput");
 
 const joinBox =
-    document.getElementById(
-        "joinBox"
-    );
+    document.getElementById("joinBox");
 
 const error =
-    document.getElementById(
-        "error"
-    );
+    document.getElementById("error");
 
 const partyError =
-    document.getElementById(
-        "partyError"
-    );
+    document.getElementById("partyError");
 
 const connectionStatus =
-    document.getElementById(
-        "connectionStatus"
-    );
+    document.getElementById("connectionStatus");
 
 const partyCodeElement =
-    document.getElementById(
-        "partyCode"
-    );
+    document.getElementById("partyCode");
 
 const playersElement =
-    document.getElementById(
-        "players"
-    );
+    document.getElementById("players");
 
 const startBtn =
-    document.getElementById(
-        "startBtn"
-    );
+    document.getElementById("startBtn");
 
 const leaveBtn =
-    document.getElementById(
-        "leaveBtn"
-    );
+    document.getElementById("leaveBtn");
 
 
-nameInput.value =
-    playerName;
+nameInput.value = playerName;
 
 
-/* =========================================================
-   CONNECT
-========================================================= */
+/* SEND */
 
-function connect() {
+function send(data){
 
-    if (
+    if(
         ws &&
-        (
-            ws.readyState ===
-                WebSocket.OPEN ||
-            ws.readyState ===
-                WebSocket.CONNECTING
-        )
-    ) {
+        ws.readyState === WebSocket.OPEN
+    ){
 
-        return;
+        ws.send(
+            JSON.stringify(data)
+        );
 
+        return true;
     }
 
+    return false;
+}
+
+
+/* CONNECT */
+
+function connect(){
+
+    if(
+        ws &&
+        (
+            ws.readyState === WebSocket.OPEN ||
+            ws.readyState === WebSocket.CONNECTING
+        )
+    ){
+        return;
+    }
 
     connectionStatus.textContent =
         "CONNECTING...";
 
+    try{
 
-    ws =
-        new WebSocket(
-            SERVER
-        );
+        ws =
+            new WebSocket(SERVER);
+
+    }catch(error){
+
+        connectionStatus.textContent =
+            "CONNECTION FAILED";
+
+        setTimeout(connect,3000);
+
+        return;
+    }
 
 
     ws.onopen = () => {
@@ -513,34 +400,19 @@ function connect() {
             "CONNECTED";
 
 
-        /*
-         * Reconnect if there is already
-         * a saved party session.
-         */
-
-        if (
+        if(
             partyCode &&
             sessionToken
-        ) {
+        ){
 
             send({
-
-                type:
-                    "reconnect",
-
-                token:
-                    sessionToken,
-
-                code:
-                    partyCode,
-
-                name:
-                    playerName
-
+                type:"reconnect",
+                token:sessionToken,
+                code:partyCode,
+                name:playerName
             });
 
         }
-
     };
 
 
@@ -548,34 +420,24 @@ function connect() {
 
         let data;
 
-
-        try {
+        try{
 
             data =
-                JSON.parse(
-                    event.data
-                );
+                JSON.parse(event.data);
 
-        }
-        catch {
+        }catch{
 
             return;
-
         }
 
-
-        handleMessage(
-            data
-        );
-
+        handleMessage(data);
     };
 
 
     ws.onerror = () => {
 
         connectionStatus.textContent =
-            "CONNECTION ERROR";
-
+            "CONNECTION FAILED";
     };
 
 
@@ -585,194 +447,121 @@ function connect() {
             "DISCONNECTED";
 
 
-        if (
+        if(
             !leaving &&
             !gameStarting
-        ) {
+        ){
 
             setTimeout(
                 connect,
-                2000
+                3000
             );
-
         }
-
     };
-
 }
 
 
-/* =========================================================
-   SEND
-========================================================= */
+/* PARTY CHECK */
 
-function send(
-    data
-) {
+function checkParty(){
 
-    if (
-        ws &&
-        ws.readyState ===
-            WebSocket.OPEN
-    ) {
-
-        ws.send(
-            JSON.stringify(
-                data
-            )
-        );
-
-        return true;
-
-    }
-
-    return false;
-
-}
-
-
-/* =========================================================
-   PARTY STATUS
-========================================================= */
-
-function checkPartyStatus() {
-
-    if (
+    if(
         !partyCode ||
         !sessionToken ||
         gameStarting
-    ) {
-
+    ){
         return;
-
     }
-
 
     send({
 
-        type:
-            "checkParty",
+        type:"checkParty",
 
-        code:
-            partyCode,
+        code:partyCode,
 
-        token:
-            sessionToken
+        token:sessionToken
 
     });
-
 }
 
 
-function startPartyChecking() {
+function startPartyCheck(){
 
-    stopPartyChecking();
+    stopPartyCheck();
 
-    checkPartyStatus();
+    checkParty();
 
-
-    partyStatusTimer =
+    partyCheckTimer =
         setInterval(
-            checkPartyStatus,
+            checkParty,
             1000
         );
-
 }
 
 
-function stopPartyChecking() {
+function stopPartyCheck(){
 
-    if (
-        partyStatusTimer
-    ) {
+    if(partyCheckTimer){
 
         clearInterval(
-            partyStatusTimer
+            partyCheckTimer
         );
 
-        partyStatusTimer =
+        partyCheckTimer =
             null;
-
     }
-
 }
 
 
-/* =========================================================
-   SERVER MESSAGE
-========================================================= */
+/* SERVER MESSAGES */
 
-function handleMessage(
-    data
-) {
+function handleMessage(data){
 
-    /* SESSION */
+    if(
+        data.type === "session"
+    ){
 
-    if (
-        data.type ===
-        "session"
-    ) {
-
-        if (
-            data.token
-        ) {
+        if(data.token){
 
             sessionToken =
                 data.token;
-
 
             localStorage.setItem(
                 "backroomsSession",
                 sessionToken
             );
-
         }
 
-
         return;
-
     }
 
 
-    /* PARTY CREATED */
-
-    if (
-        data.type ===
-        "partyCreated"
-    ) {
+    if(
+        data.type === "partyCreated"
+    ){
 
         partyCode =
             data.code;
 
-
-        if (
-            data.token
-        ) {
+        if(data.token){
 
             sessionToken =
                 data.token;
-
 
             localStorage.setItem(
                 "backroomsSession",
                 sessionToken
             );
-
         }
-
 
         localStorage.setItem(
             "partyCode",
             partyCode
         );
 
-
-        isHost =
-            true;
-
+        isHost = true;
 
         showParty();
-
 
         startBtn.style.display =
             "block";
@@ -783,103 +572,72 @@ function handleMessage(
         startBtn.textContent =
             "START GAME";
 
-
-        startPartyChecking();
-
+        startPartyCheck();
 
         return;
-
     }
 
 
-    /* PARTY JOINED */
-
-    if (
-        data.type ===
-        "partyJoined"
-    ) {
+    if(
+        data.type === "partyJoined"
+    ){
 
         partyCode =
             data.code;
 
-
-        if (
-            data.token
-        ) {
+        if(data.token){
 
             sessionToken =
                 data.token;
-
 
             localStorage.setItem(
                 "backroomsSession",
                 sessionToken
             );
-
         }
-
 
         localStorage.setItem(
             "partyCode",
             partyCode
         );
 
-
         isHost =
             data.host === true;
 
-
         showParty();
 
-
-        if (
-            isHost
-        ) {
+        if(isHost){
 
             startBtn.style.display =
                 "block";
 
-        }
-        else {
+        }else{
 
             startBtn.style.display =
                 "none";
-
         }
 
-
-        startPartyChecking();
-
+        startPartyCheck();
 
         return;
-
     }
 
 
-    /* LOBBY */
+    if(
+        data.type === "lobby"
+    ){
 
-    if (
-        data.type ===
-        "lobby"
-    ) {
-
-        if (
-            data.code
-        ) {
+        if(data.code){
 
             partyCode =
                 data.code;
 
-
             partyCodeElement.textContent =
                 data.code;
-
         }
 
-
         updatePlayers(
-            data.players ||
-            []
+            data.players || []
         );
 
 
@@ -887,21 +645,16 @@ function handleMessage(
             data.youAreHost === true;
 
 
-        if (
+        if(
             data.host &&
-            data.host ===
-                sessionToken
-        ) {
+            data.host === sessionToken
+        ){
 
-            isHost =
-                true;
-
+            isHost = true;
         }
 
 
-        if (
-            isHost
-        ) {
+        if(isHost){
 
             startBtn.style.display =
                 "block";
@@ -912,205 +665,133 @@ function handleMessage(
             startBtn.textContent =
                 "START GAME";
 
-        }
-        else {
+        }else{
 
             startBtn.style.display =
                 "none";
-
         }
 
-
         return;
-
     }
 
 
-    /* PARTY STATUS */
+    if(
+        data.type === "partyStatus"
+    ){
 
-    if (
-        data.type ===
-        "partyStatus"
-    ) {
-
-        if (
-            data.token
-        ) {
+        if(data.token){
 
             sessionToken =
                 data.token;
-
 
             localStorage.setItem(
                 "backroomsSession",
                 sessionToken
             );
-
         }
 
 
-        if (
-            data.code
-        ) {
+        if(data.code){
 
             partyCode =
                 data.code;
-
 
             localStorage.setItem(
                 "partyCode",
                 partyCode
             );
-
         }
 
 
-        /*
-         * Friend fallback:
-         *
-         * even if they miss gameStarted,
-         * they still detect the party
-         * has started.
-         */
+        if(data.started === true){
 
-        if (
-            data.started === true
-        ) {
-
-            stopPartyChecking();
+            stopPartyCheck();
 
             goToGame();
-
         }
 
-
         return;
-
     }
 
 
-    /* GAME STARTED */
+    if(
+        data.type === "gameStarted"
+    ){
 
-    if (
-        data.type ===
-        "gameStarted"
-    ) {
-
-        if (
-            data.token
-        ) {
+        if(data.token){
 
             sessionToken =
                 data.token;
-
 
             localStorage.setItem(
                 "backroomsSession",
                 sessionToken
             );
-
         }
 
 
-        if (
-            data.code
-        ) {
+        if(data.code){
 
             partyCode =
                 data.code;
-
 
             localStorage.setItem(
                 "partyCode",
                 partyCode
             );
-
         }
 
 
-        stopPartyChecking();
+        stopPartyCheck();
 
         goToGame();
 
-
         return;
-
     }
 
 
-    /* ERROR */
-
-    if (
-        data.type ===
-        "error"
-    ) {
+    if(
+        data.type === "error"
+    ){
 
         partyError.textContent =
             data.message ||
             "Something went wrong.";
 
-
         gameStarting =
             false;
-
 
         startBtn.disabled =
             false;
 
-
         startBtn.textContent =
             "START GAME";
-
-
-        return;
-
     }
-
 }
 
 
-/* =========================================================
-   SHOW PARTY
-========================================================= */
+/* PARTY SCREEN */
 
-function showParty() {
+function showParty(){
 
     menu.classList.add(
         "hidden"
     );
 
-
     party.classList.remove(
         "hidden"
     );
 
-
     partyCodeElement.textContent =
         partyCode;
-
 }
 
 
-/* =========================================================
-   GO TO GAME
-========================================================= */
+/* GO GAME */
 
-function goToGame() {
+function goToGame(){
 
-    /*
-     * IMPORTANT:
-     *
-     * Do NOT check:
-     *
-     * if (gameStarting) return;
-     *
-     * because the host sets gameStarting
-     * before receiving gameStarted.
-     */
-
-    if (
-        !partyCode
-    ) {
+    if(!partyCode){
 
         partyError.textContent =
             "Party code is missing.";
@@ -1119,13 +800,10 @@ function goToGame() {
             false;
 
         return;
-
     }
 
 
-    if (
-        !sessionToken
-    ) {
+    if(!sessionToken){
 
         partyError.textContent =
             "Game session is missing.";
@@ -1134,7 +812,6 @@ function goToGame() {
             false;
 
         return;
-
     }
 
 
@@ -1142,75 +819,52 @@ function goToGame() {
         true;
 
 
-    stopPartyChecking();
+    stopPartyCheck();
 
 
-    const gameURL =
+    const url =
         "game.html?party=" +
-        encodeURIComponent(
-            partyCode
-        ) +
+        encodeURIComponent(partyCode) +
         "&token=" +
-        encodeURIComponent(
-            sessionToken
-        );
+        encodeURIComponent(sessionToken);
 
 
     window.location.href =
-        gameURL;
-
+        url;
 }
 
 
-/* =========================================================
-   PLAYERS
-========================================================= */
+/* PLAYERS */
 
-function updatePlayers(
-    players
-) {
+function updatePlayers(players){
 
-    playersElement.innerHTML =
-        "";
+    playersElement.innerHTML = "";
 
 
     players.forEach(
-        (
-            p,
-            index
-        ) => {
+        (p,index) => {
 
             const row =
-                document.createElement(
-                    "div"
-                );
-
+                document.createElement("div");
 
             row.className =
                 "player";
 
 
             const name =
-                document.createElement(
-                    "span"
-                );
-
+                document.createElement("span");
 
             name.textContent =
-                p.name ||
-                "Player";
+                p.name || "Player";
 
 
             const role =
-                document.createElement(
-                    "span"
-                );
+                document.createElement("span");
 
 
-            if (
-                p.id ===
-                sessionToken
-            ) {
+            if(
+                p.id === sessionToken
+            ){
 
                 role.textContent =
                     "YOU";
@@ -1218,10 +872,9 @@ function updatePlayers(
                 role.className =
                     "host";
 
-            }
-            else if (
+            }else if(
                 p.host
-            ) {
+            ){
 
                 role.textContent =
                     "HOST";
@@ -1229,80 +882,56 @@ function updatePlayers(
                 role.className =
                     "host";
 
-            }
-            else {
+            }else{
 
                 role.textContent =
                     "PLAYER " +
                     (index + 1);
-
             }
 
 
-            row.appendChild(
-                name
-            );
+            row.appendChild(name);
 
-            row.appendChild(
-                role
-            );
+            row.appendChild(role);
 
-
-            playersElement.appendChild(
-                row
-            );
-
+            playersElement.appendChild(row);
         }
     );
-
 }
 
 
-/* =========================================================
-   CREATE
-========================================================= */
+/* CREATE */
 
 document.getElementById(
     "createBtn"
 ).onclick = () => {
 
-    error.textContent =
-        "";
-
-    partyError.textContent =
-        "";
-
+    error.textContent = "";
 
     const name =
         nameInput.value
             .trim()
-            .slice(
-                0,
-                16
-            );
+            .slice(0,16);
 
 
-    if (!name) {
+    if(!name){
 
         error.textContent =
             "Enter your name first.";
 
         return;
-
     }
 
 
-    if (
+    if(
         !ws ||
-        ws.readyState !==
-            WebSocket.OPEN
-    ) {
+        ws.readyState !== WebSocket.OPEN
+    ){
 
         error.textContent =
             "Still connecting to server...";
 
         return;
-
     }
 
 
@@ -1322,56 +951,43 @@ document.getElementById(
 
     send({
 
-        type:
-            "createParty",
+        type:"createParty",
 
-        name:
-            playerName
+        name:playerName
 
     });
-
 };
 
 
-/* =========================================================
-   JOIN UI
-========================================================= */
+/* JOIN UI */
 
 document.getElementById(
     "joinBtn"
 ).onclick = () => {
 
-    error.textContent =
-        "";
+    error.textContent = "";
 
     joinBox.classList.remove(
         "hidden"
     );
 
     codeInput.focus();
-
 };
 
 
-/* =========================================================
-   JOIN
-========================================================= */
+/* JOIN */
 
 document.getElementById(
     "joinConfirm"
 ).onclick = () => {
 
-    error.textContent =
-        "";
+    error.textContent = "";
 
 
     const name =
         nameInput.value
             .trim()
-            .slice(
-                0,
-                16
-            );
+            .slice(0,16);
 
 
     const code =
@@ -1380,39 +996,33 @@ document.getElementById(
             .toUpperCase();
 
 
-    if (!name) {
+    if(!name){
 
         error.textContent =
             "Enter your name first.";
 
         return;
-
     }
 
 
-    if (
-        code.length !== 5
-    ) {
+    if(code.length !== 5){
 
         error.textContent =
             "Party codes are 5 characters.";
 
         return;
-
     }
 
 
-    if (
+    if(
         !ws ||
-        ws.readyState !==
-            WebSocket.OPEN
-    ) {
+        ws.readyState !== WebSocket.OPEN
+    ){
 
         error.textContent =
             "Still connecting to server...";
 
         return;
-
     }
 
 
@@ -1432,53 +1042,41 @@ document.getElementById(
 
     send({
 
-        type:
-            "joinParty",
+        type:"joinParty",
 
-        name:
-            playerName,
+        name:playerName,
 
-        code:
-            code
+        code:code
 
     });
-
 };
 
 
-/* =========================================================
-   START GAME
-========================================================= */
+/* START */
 
 startBtn.onclick = () => {
 
-    partyError.textContent =
-        "";
+    partyError.textContent = "";
 
 
-    if (
-        !isHost
-    ) {
+    if(!isHost){
 
         partyError.textContent =
             "Only the host can start the game.";
 
         return;
-
     }
 
 
-    if (
+    if(
         !ws ||
-        ws.readyState !==
-            WebSocket.OPEN
-    ) {
+        ws.readyState !== WebSocket.OPEN
+    ){
 
         partyError.textContent =
             "Not connected to server.";
 
         return;
-
     }
 
 
@@ -1496,17 +1094,13 @@ startBtn.onclick = () => {
 
     send({
 
-        type:
-            "startGame"
+        type:"startGame"
 
     });
-
 };
 
 
-/* =========================================================
-   LEAVE
-========================================================= */
+/* LEAVE */
 
 leaveBtn.onclick = () => {
 
@@ -1514,7 +1108,7 @@ leaveBtn.onclick = () => {
         true;
 
 
-    stopPartyChecking();
+    stopPartyCheck();
 
 
     localStorage.removeItem(
@@ -1530,39 +1124,31 @@ leaveBtn.onclick = () => {
     );
 
 
-    if (ws) {
-
+    if(ws){
         ws.close();
-
     }
 
 
     location.reload();
-
 };
 
 
-/* =========================================================
-   KEYBOARD
-========================================================= */
+/* ENTER KEY */
 
 nameInput.addEventListener(
     "keydown",
     event => {
 
-        if (
-            event.key ===
-            "Enter"
-        ) {
+        if(
+            event.key === "Enter"
+        ){
 
             document
                 .getElementById(
                     "createBtn"
                 )
                 .click();
-
         }
-
     }
 );
 
@@ -1571,22 +1157,21 @@ codeInput.addEventListener(
     "keydown",
     event => {
 
-        if (
-            event.key ===
-            "Enter"
-        ) {
+        if(
+            event.key === "Enter"
+        ){
 
             document
                 .getElementById(
                     "joinConfirm"
                 )
                 .click();
-
         }
-
     }
 );
 
+
+/* CODE */
 
 codeInput.addEventListener(
     "input",
@@ -1599,18 +1184,13 @@ codeInput.addEventListener(
                     ""
                 )
                 .toUpperCase()
-                .slice(
-                    0,
-                    5
-                );
+                .slice(0,5);
 
     }
 );
 
 
-/* =========================================================
-   START
-========================================================= */
+/* CONNECT */
 
 connect();
 
