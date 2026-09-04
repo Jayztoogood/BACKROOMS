@@ -189,9 +189,9 @@ body {
 #connectionStatus {
     position: absolute;
 
-    left: 20px;
-
     top: 20px;
+
+    left: 20px;
 
     font-size: 10px;
 
@@ -224,6 +224,9 @@ body {
     z-index: 20;
 
     opacity: 0;
+
+    transition:
+        opacity .2s;
 }
 
 #damage {
@@ -239,6 +242,9 @@ body {
     pointer-events: none;
 
     z-index: 15;
+
+    transition:
+        opacity .1s;
 }
 
 #startScreen,
@@ -400,9 +406,9 @@ button:hover {
 <div id="damage"></div>
 
 
-<!-- ======================================================
-     START
-======================================================= -->
+<!-- =====================================================
+     START SCREEN
+===================================================== -->
 
 <div id="startScreen">
 
@@ -422,7 +428,10 @@ button:hover {
             Don't let it find you.
         </p>
 
-        <button id="playButton">
+        <button
+            id="playButton"
+            type="button"
+        >
             ENTER THE BACKROOMS
         </button>
 
@@ -431,9 +440,9 @@ button:hover {
 </div>
 
 
-<!-- ======================================================
+<!-- =====================================================
      ERROR
-======================================================= -->
+===================================================== -->
 
 <div
     id="errorScreen"
@@ -461,9 +470,9 @@ button:hover {
 </div>
 
 
-<!-- ======================================================
+<!-- =====================================================
      END
-======================================================= -->
+===================================================== -->
 
 <div
     id="endScreen"
@@ -504,7 +513,7 @@ const SERVER =
 
 
 /* =========================================================
-   PARTY / TOKEN
+   PARTY
 ========================================================= */
 
 const params =
@@ -521,10 +530,8 @@ const partyCode =
 
 
 /*
- * IMPORTANT:
- * Token comes from the URL first.
+ * Get token from URL first.
  */
-
 const urlToken =
     params.get("token");
 
@@ -537,9 +544,8 @@ let sessionToken =
 
 
 /*
- * Save the token immediately.
+ * Save token from URL.
  */
-
 if (
     urlToken
 ) {
@@ -552,6 +558,9 @@ if (
 }
 
 
+/*
+ * Save party code.
+ */
 if (
     partyCode
 ) {
@@ -572,7 +581,7 @@ const playerName =
 
 
 /* =========================================================
-   VALIDATION
+   SESSION VALIDATION
 ========================================================= */
 
 if (
@@ -590,11 +599,11 @@ if (
     document.getElementById(
         "errorText"
     ).textContent =
-        "The game did not receive your party session.";
+        "Your party session could not be found.";
 
 
     throw new Error(
-        "Missing partyCode or sessionToken."
+        "Missing party code or session token."
     );
 
 }
@@ -604,8 +613,7 @@ if (
    GAME STATE
 ========================================================= */
 
-let ws =
-    null;
+let ws = null;
 
 let connected =
     false;
@@ -646,10 +654,11 @@ let pitch =
 let bobTime =
     0;
 
+let reconnectTimer =
+    null;
 
-const keys =
-    {};
 
+const keys = {};
 
 const remotePlayers =
     new Map();
@@ -667,7 +676,7 @@ document.getElementById(
 
 
 /* =========================================================
-   THREE
+   THREE SCENE
 ========================================================= */
 
 const scene =
@@ -867,7 +876,7 @@ const ceilingMaterial =
 
 
 /* =========================================================
-   MAP
+   MAZE
 ========================================================= */
 
 const CELL =
@@ -908,7 +917,9 @@ const cols =
     maze[0].length;
 
 
-/* FLOOR */
+/* =========================================================
+   FLOOR
+========================================================= */
 
 const floor =
     new THREE.Mesh(
@@ -939,7 +950,9 @@ scene.add(
 );
 
 
-/* CEILING */
+/* =========================================================
+   CEILING
+========================================================= */
 
 const ceiling =
     new THREE.Mesh(
@@ -970,7 +983,9 @@ scene.add(
 );
 
 
-/* WALLS */
+/* =========================================================
+   WALLS
+========================================================= */
 
 const walls =
     [];
@@ -1059,7 +1074,7 @@ for (
 
 
 /* =========================================================
-   LIGHTS
+   CEILING LIGHTS
 ========================================================= */
 
 for (
@@ -1571,7 +1586,7 @@ function collides(
 
 
 /* =========================================================
-   INPUT
+   KEYBOARD
 ========================================================= */
 
 window.addEventListener(
@@ -1621,7 +1636,7 @@ window.addEventListener(
 
 
 /* =========================================================
-   MOUSE
+   MOUSE LOOK
 ========================================================= */
 
 renderer.domElement.addEventListener(
@@ -1629,11 +1644,39 @@ renderer.domElement.addEventListener(
     () => {
 
         if (
-            !gameEnded
+            gameEnded
         ) {
 
+            return;
+
+        }
+
+
+        if (
+            document.pointerLockElement !==
             renderer.domElement
-                .requestPointerLock();
+        ) {
+
+            try {
+
+                const result =
+                    renderer.domElement
+                        .requestPointerLock();
+
+
+                if (
+                    result &&
+                    typeof result.catch ===
+                        "function"
+                ) {
+
+                    result.catch(
+                        () => {}
+                    );
+
+                }
+
+            } catch {}
 
         }
 
@@ -1658,7 +1701,8 @@ document.addEventListener(
     event => {
 
         if (
-            !canLook
+            !canLook ||
+            gameEnded
         ) {
 
             return;
@@ -1695,10 +1739,6 @@ document.addEventListener(
    NETWORK
 ========================================================= */
 
-let reconnectTimer =
-    null;
-
-
 function connectServer() {
 
     if (
@@ -1706,7 +1746,6 @@ function connectServer() {
         (
             ws.readyState ===
                 WebSocket.OPEN ||
-
             ws.readyState ===
                 WebSocket.CONNECTING
         )
@@ -1742,8 +1781,7 @@ function connectServer() {
 
 
         /*
-         * Join the party/game using
-         * the session token from the lobby.
+         * Join game with exact session token.
          */
 
         ws.send(
@@ -1863,7 +1901,7 @@ function networkSend(
 
 
 /* =========================================================
-   NETWORK DATA
+   NETWORK HANDLER
 ========================================================= */
 
 function handleNetwork(
@@ -1927,7 +1965,8 @@ function handleNetwork(
     ) {
 
         syncPlayers(
-            data.players || []
+            data.players ||
+            []
         );
 
 
@@ -2026,13 +2065,16 @@ function handleNetwork(
             "Connection error."
         );
 
+
+        return;
+
     }
 
 }
 
 
 /* =========================================================
-   REMOTE PLAYERS
+   REMOTE PLAYER
 ========================================================= */
 
 function createRemotePlayer(
@@ -2104,10 +2146,6 @@ function createRemotePlayer(
     );
 
 
-    /*
-     * Name label.
-     */
-
     const canvas =
         document.createElement(
             "canvas"
@@ -2116,7 +2154,6 @@ function createRemotePlayer(
 
     canvas.width =
         512;
-
 
     canvas.height =
         128;
@@ -2141,10 +2178,14 @@ function createRemotePlayer(
 
 
     ctx.fillText(
+
         remote.name ||
         "Player",
+
         256,
+
         60
+
     );
 
 
@@ -2204,8 +2245,7 @@ function createRemotePlayer(
 
     return {
 
-        group:
-            group,
+        group,
 
         targetX:
             remote.x || 0,
@@ -2220,6 +2260,10 @@ function createRemotePlayer(
 
 }
 
+
+/* =========================================================
+   REMOTE PLAYERS SYNC
+========================================================= */
 
 function syncPlayers(
     players
@@ -2324,7 +2368,7 @@ function syncPlayers(
 
 
 /* =========================================================
-   PLAYER
+   PLAYER MOVEMENT
 ========================================================= */
 
 function updatePlayer(
@@ -2421,9 +2465,13 @@ function updatePlayer(
 
     stamina =
         THREE.MathUtils.clamp(
+
             stamina,
+
             0,
+
             100
+
         );
 
 
@@ -2474,8 +2522,10 @@ function updatePlayer(
 
         const movement =
             direction.multiplyScalar(
+
                 speed *
                 delta
+
             );
 
 
@@ -2702,6 +2752,10 @@ function updateMonster(
         );
 
 
+    /*
+     * Monster starts chasing nearby.
+     */
+
     if (
         distance <
         34
@@ -2783,9 +2837,13 @@ function updateMonster(
 
 
             monster.lookAt(
+
                 player.x,
+
                 1.4,
+
                 player.z
+
             );
 
         }
@@ -2793,13 +2851,21 @@ function updateMonster(
     }
 
 
+    /*
+     * Screen danger effect.
+     */
+
     const danger =
         THREE.MathUtils.clamp(
+
             1 -
             distance /
             14,
+
             0,
+
             1
+
         );
 
 
@@ -2811,6 +2877,10 @@ function updateMonster(
             .75
         );
 
+
+    /*
+     * Damage.
+     */
 
     if (
         distance <
@@ -2869,7 +2939,9 @@ function updateObjective() {
     ).textContent =
 
         keyCollected
+
         ? "KEY FOUND — FIND THE EXIT"
+
         : "FIND THE KEY";
 
 }
@@ -2913,9 +2985,12 @@ function updateHUD(
 
     damageCooldown =
         Math.max(
+
             0,
+
             damageCooldown -
             delta
+
         );
 
 
@@ -2957,7 +3032,7 @@ function updateHUD(
 
 
 /* =========================================================
-   SEND POSITION
+   POSITION
 ========================================================= */
 
 function sendPosition() {
@@ -3010,7 +3085,7 @@ function sendPosition() {
 
 
 /* =========================================================
-   END GAME
+   END
 ========================================================= */
 
 function finishGame(
@@ -3069,24 +3144,73 @@ function finishGame(
 
 
 /* =========================================================
-   PLAY
+   ENTER THE BACKROOMS
 ========================================================= */
+
+/*
+ * IMPORTANT:
+ *
+ * Hide the screen FIRST.
+ *
+ * Pointer lock is OPTIONAL.
+ *
+ * This means a browser that blocks
+ * pointer lock will NOT prevent the
+ * player from entering the game.
+ */
 
 document.getElementById(
     "playButton"
-).onclick = () => {
+).addEventListener(
+    "click",
+    event => {
 
-    document.getElementById(
-        "startScreen"
-    ).classList.add(
-        "hidden"
-    );
+        event.preventDefault();
 
 
-    renderer.domElement
-        .requestPointerLock();
+        const startScreen =
+            document.getElementById(
+                "startScreen"
+            );
 
-};
+
+        /*
+         * ALWAYS remove overlay.
+         */
+        startScreen.classList.add(
+            "hidden"
+        );
+
+
+        /*
+         * Try mouse lock.
+         *
+         * If it fails, game still works.
+         */
+
+        try {
+
+            const result =
+                renderer.domElement
+                    .requestPointerLock();
+
+
+            if (
+                result &&
+                typeof result.catch ===
+                    "function"
+            ) {
+
+                result.catch(
+                    () => {}
+                );
+
+            }
+
+        } catch {}
+
+    }
+);
 
 
 /* =========================================================
@@ -3122,6 +3246,10 @@ updateObjective();
 
 connectServer();
 
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
 
 const clock =
     new THREE.Clock();
