@@ -176,8 +176,6 @@ button:disabled {
     color: #777;
 }
 
-/* Hidden on the main menu.
-   Shown automatically for the host. */
 #startBtn {
     display: none;
 }
@@ -239,7 +237,7 @@ button:disabled {
     </div>
 
 
-    <!-- PARTY -->
+    <!-- PARTY SCREEN -->
     <div class="panel hidden" id="party">
 
         <div class="small">
@@ -256,7 +254,6 @@ button:disabled {
 
         <div class="players" id="players"></div>
 
-        <!-- HOST START BUTTON -->
         <button id="startBtn">
             START GAME
         </button>
@@ -295,8 +292,6 @@ let partyCode =
 
 let isHost = false;
 
-let reconnectTimer = null;
-
 let leaving = false;
 
 
@@ -325,20 +320,17 @@ const error =
 const partyError =
     document.getElementById("partyError");
 
-const connectionStatus =
-    document.getElementById("connectionStatus");
-
-const partyCodeElement =
-    document.getElementById("partyCode");
+const startBtn =
+    document.getElementById("startBtn");
 
 const playersElement =
     document.getElementById("players");
 
-const startBtn =
-    document.getElementById("startBtn");
+const partyCodeElement =
+    document.getElementById("partyCode");
 
-const leaveBtn =
-    document.getElementById("leaveBtn");
+const connectionStatus =
+    document.getElementById("connectionStatus");
 
 
 nameInput.value =
@@ -358,58 +350,26 @@ function connect() {
             ws.readyState === WebSocket.CONNECTING
         )
     ) {
+
         return;
+
     }
+
 
     connectionStatus.textContent =
         "Connecting...";
 
+
     ws =
-        new WebSocket(SERVER);
+        new WebSocket(
+            SERVER
+        );
 
 
     ws.onopen = () => {
 
         connectionStatus.textContent =
             "CONNECTED";
-
-        /*
-         * Only reconnect if a previous party
-         * session actually exists.
-         */
-        if (
-            sessionToken &&
-            partyCode
-        ) {
-
-            send({
-                type: "reconnect",
-                token: sessionToken,
-                code: partyCode,
-                name: playerName
-            });
-
-        }
-
-    };
-
-
-    ws.onmessage = event => {
-
-        let data;
-
-        try {
-
-            data =
-                JSON.parse(event.data);
-
-        } catch {
-
-            return;
-
-        }
-
-        handleMessage(data);
 
     };
 
@@ -427,19 +387,31 @@ function connect() {
         connectionStatus.textContent =
             "DISCONNECTED";
 
-        if (!leaving) {
+    };
 
-            clearTimeout(
-                reconnectTimer
-            );
 
-            reconnectTimer =
-                setTimeout(
-                    connect,
-                    2500
+    ws.onmessage = event => {
+
+        let data;
+
+
+        try {
+
+            data =
+                JSON.parse(
+                    event.data
                 );
 
+        } catch {
+
+            return;
+
         }
+
+
+        handleMessage(
+            data
+        );
 
     };
 
@@ -447,40 +419,14 @@ function connect() {
 
 
 /* =========================================================
-   SEND
-========================================================= */
-
-function send(data) {
-
-    if (
-        ws &&
-        ws.readyState ===
-            WebSocket.OPEN
-    ) {
-
-        ws.send(
-            JSON.stringify(data)
-        );
-
-        return true;
-
-    }
-
-    return false;
-
-}
-
-
-/* =========================================================
-   SERVER MESSAGES
+   HANDLE SERVER DATA
 ========================================================= */
 
 function handleMessage(data) {
 
 
-    /*
-     * SESSION TOKEN
-     */
+    /* SESSION */
+
     if (
         data.type === "session"
     ) {
@@ -488,18 +434,20 @@ function handleMessage(data) {
         sessionToken =
             data.token;
 
+
         localStorage.setItem(
             "backroomsSession",
             sessionToken
         );
 
+
         return;
+
     }
 
 
-    /*
-     * PARTY CREATED
-     */
+    /* PARTY CREATED */
+
     if (
         data.type === "partyCreated"
     ) {
@@ -507,39 +455,62 @@ function handleMessage(data) {
         partyCode =
             data.code;
 
+
         /*
-         * Creator is ALWAYS host.
+         * The server now also sends the token
+         * with partyCreated.
          */
+
+        if (data.token) {
+
+            sessionToken =
+                data.token;
+
+
+            localStorage.setItem(
+                "backroomsSession",
+                sessionToken
+            );
+
+        }
+
+
         isHost =
             true;
+
 
         localStorage.setItem(
             "partyCode",
             partyCode
         );
 
+
         showParty();
 
 
         /*
-         * SHOW START GAME IMMEDIATELY.
+         * HOST SEES START GAME.
          */
+
         startBtn.style.display =
             "block";
+
 
         startBtn.disabled =
             false;
 
+
         startBtn.textContent =
             "START GAME";
 
+
         return;
+
     }
 
 
-    /*
-     * PARTY JOINED
-     */
+    /* PARTY JOINED */
+
     if (
         data.type === "partyJoined"
     ) {
@@ -547,17 +518,30 @@ function handleMessage(data) {
         partyCode =
             data.code;
 
-        /*
-         * The server will tell us if this is
-         * a host reconnect.
-         */
+
+        if (data.token) {
+
+            sessionToken =
+                data.token;
+
+
+            localStorage.setItem(
+                "backroomsSession",
+                sessionToken
+            );
+
+        }
+
+
         isHost =
             data.host === true;
+
 
         localStorage.setItem(
             "partyCode",
             partyCode
         );
+
 
         showParty();
 
@@ -567,13 +551,14 @@ function handleMessage(data) {
                 ? "block"
                 : "none";
 
+
         return;
+
     }
 
 
-    /*
-     * LOBBY UPDATE
-     */
+    /* LOBBY UPDATE */
+
     if (
         data.type === "lobby"
     ) {
@@ -595,9 +580,9 @@ function handleMessage(data) {
 
 
         /*
-         * SERVER EXPLICITLY IDENTIFIES
-         * WHETHER WE ARE THE HOST.
+         * New explicit host flag.
          */
+
         if (
             data.youAreHost === true
         ) {
@@ -609,13 +594,12 @@ function handleMessage(data) {
 
 
         /*
-         * Compatibility with the server's
-         * host token.
+         * Compatibility with host ID.
          */
+
         if (
             data.host &&
-            data.host ===
-                sessionToken
+            data.host === sessionToken
         ) {
 
             isHost =
@@ -629,12 +613,6 @@ function handleMessage(data) {
             startBtn.style.display =
                 "block";
 
-            startBtn.disabled =
-                false;
-
-            startBtn.textContent =
-                "START GAME";
-
         } else {
 
             startBtn.style.display =
@@ -642,26 +620,72 @@ function handleMessage(data) {
 
         }
 
+
         return;
+
     }
 
 
-    /*
-     * GAME STARTED
-     */
+    /* GAME STARTED */
+
     if (
         data.type === "gameStarted"
     ) {
 
+        /*
+         * THIS IS THE IMPORTANT FIX.
+         *
+         * The server gives THIS PLAYER
+         * their actual session token.
+         */
+
+        if (
+            data.token
+        ) {
+
+            sessionToken =
+                data.token;
+
+
+            localStorage.setItem(
+                "backroomsSession",
+                sessionToken
+            );
+
+        }
+
+
+        if (
+            data.code
+        ) {
+
+            partyCode =
+                data.code;
+
+
+            localStorage.setItem(
+                "partyCode",
+                partyCode
+            );
+
+        }
+
+
+        /*
+         * Now the game URL definitely
+         * contains the correct token.
+         */
+
         goToGame();
 
+
         return;
+
     }
 
 
-    /*
-     * ERROR
-     */
+    /* ERROR */
+
     if (
         data.type === "error"
     ) {
@@ -669,6 +693,7 @@ function handleMessage(data) {
         const message =
             data.message ||
             "Something went wrong.";
+
 
         if (
             party.classList.contains(
@@ -687,6 +712,7 @@ function handleMessage(data) {
         }
 
         return;
+
     }
 
 }
@@ -702,9 +728,11 @@ function showParty() {
         "hidden"
     );
 
+
     party.classList.remove(
         "hidden"
     );
+
 
     partyCodeElement.textContent =
         partyCode;
@@ -719,24 +747,28 @@ function showParty() {
 function goToGame() {
 
     /*
-     * The game needs BOTH the party code
-     * and session token.
+     * We should have the token now.
      */
 
     if (
-        !partyCode ||
         !sessionToken
     ) {
 
         partyError.textContent =
-            "Your game session is missing.";
+            "The server did not give you a game session.";
+
+        startBtn.disabled =
+            false;
+
+        startBtn.textContent =
+            "START GAME";
 
         return;
 
     }
 
 
-    const gameURL =
+    const url =
         "game.html?party=" +
         encodeURIComponent(
             partyCode
@@ -748,7 +780,7 @@ function goToGame() {
 
 
     window.location.href =
-        gameURL;
+        url;
 
 }
 
@@ -772,6 +804,7 @@ function updatePlayers(
                 document.createElement(
                     "div"
                 );
+
 
             row.className =
                 "player";
@@ -800,7 +833,9 @@ function updatePlayers(
             ) {
 
                 role.textContent =
-                    "YOU";
+                    p.host
+                    ? "YOU"
+                    : "YOU";
 
                 role.className =
                     "host";
@@ -827,6 +862,7 @@ function updatePlayers(
             row.appendChild(
                 name
             );
+
 
             row.appendChild(
                 role
@@ -858,7 +894,10 @@ document.getElementById(
     const name =
         nameInput.value
             .trim()
-            .slice(0, 16);
+            .slice(
+                0,
+                16
+            );
 
 
     if (!name) {
@@ -895,22 +934,21 @@ document.getElementById(
     );
 
 
-    /*
-     * Creating a party makes us host.
-     */
     isHost =
         true;
 
 
-    send({
+    ws.send(
+        JSON.stringify({
 
-        type:
-            "createParty",
+            type:
+                "createParty",
 
-        name:
-            playerName
+            name:
+                playerName
 
-    });
+        })
+    );
 
 };
 
@@ -926,6 +964,7 @@ document.getElementById(
     joinBox.classList.remove(
         "hidden"
     );
+
 
     codeInput.focus();
 
@@ -947,7 +986,10 @@ document.getElementById(
     const name =
         nameInput.value
             .trim()
-            .slice(0, 16);
+            .slice(
+                0,
+                16
+            );
 
 
     const code =
@@ -995,6 +1037,7 @@ document.getElementById(
     playerName =
         name;
 
+
     isHost =
         false;
 
@@ -1005,18 +1048,20 @@ document.getElementById(
     );
 
 
-    send({
+    ws.send(
+        JSON.stringify({
 
-        type:
-            "joinParty",
+            type:
+                "joinParty",
 
-        name:
-            playerName,
+            name:
+                playerName,
 
-        code:
-            code
+            code:
+                code
 
-    });
+        })
+    );
 
 };
 
@@ -1058,20 +1103,19 @@ startBtn.onclick = () => {
     startBtn.disabled =
         true;
 
+
     startBtn.textContent =
         "STARTING...";
 
 
-    /*
-     * Server broadcasts gameStarted
-     * to EVERY player.
-     */
-    send({
+    ws.send(
+        JSON.stringify({
 
-        type:
-            "startGame"
+            type:
+                "startGame"
 
-    });
+        })
+    );
 
 };
 
@@ -1080,15 +1124,12 @@ startBtn.onclick = () => {
    LEAVE
 ========================================================= */
 
-leaveBtn.onclick = () => {
+document.getElementById(
+    "leaveBtn"
+).onclick = () => {
 
     leaving =
         true;
-
-
-    clearTimeout(
-        reconnectTimer
-    );
 
 
     localStorage.removeItem(
@@ -1111,78 +1152,13 @@ leaveBtn.onclick = () => {
     }
 
 
-    window.location.reload();
+    location.reload();
 
 };
 
 
 /* =========================================================
-   ENTER KEY
-========================================================= */
-
-nameInput.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            event.key === "Enter"
-        ) {
-
-            document
-                .getElementById(
-                    "createBtn"
-                )
-                .click();
-
-        }
-
-    }
-);
-
-
-codeInput.addEventListener(
-    "keydown",
-    event => {
-
-        if (
-            event.key === "Enter"
-        ) {
-
-            document
-                .getElementById(
-                    "joinConfirm"
-                )
-                .click();
-
-        }
-
-    }
-);
-
-
-/* =========================================================
-   CODE INPUT
-========================================================= */
-
-codeInput.addEventListener(
-    "input",
-    () => {
-
-        codeInput.value =
-            codeInput.value
-                .replace(
-                    /[^A-Za-z0-9]/g,
-                    ""
-                )
-                .toUpperCase()
-                .slice(0, 5);
-
-    }
-);
-
-
-/* =========================================================
-   CONNECT
+   START CONNECTION
 ========================================================= */
 
 connect();
