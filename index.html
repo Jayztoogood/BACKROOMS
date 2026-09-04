@@ -51,15 +51,18 @@ body {
 .center {
     width: 100%;
     height: 100%;
+
     display: flex;
     justify-content: center;
     align-items: center;
+
     padding: 20px;
 }
 
 .panel {
     width: 460px;
     max-width: 100%;
+
     padding: 38px;
 
     background: rgba(20,18,7,.88);
@@ -224,7 +227,6 @@ button:disabled {
     color: #777;
 }
 
-/* HOST BUTTON */
 #startBtn {
     display: none;
 }
@@ -300,7 +302,7 @@ button:disabled {
     </div>
 
 
-    <!-- PARTY -->
+    <!-- PARTY SCREEN -->
 
     <div
         class="panel hidden"
@@ -327,13 +329,9 @@ button:disabled {
             id="players"
         ></div>
 
-
-        <!-- HOST ONLY -->
-
         <button id="startBtn">
             START GAME
         </button>
-
 
         <button
             id="leaveBtn"
@@ -350,10 +348,6 @@ button:disabled {
 
 
 <script>
-
-/* =========================================================
-   SERVER
-========================================================= */
 
 const SERVER =
     "wss://backrooms-avnx.onrender.com";
@@ -452,6 +446,11 @@ const startBtn =
         "startBtn"
     );
 
+const leaveBtn =
+    document.getElementById(
+        "leaveBtn"
+    );
+
 
 nameInput.value =
     playerName;
@@ -495,8 +494,9 @@ function connect() {
 
 
         /*
-         * Reconnect to existing party if
-         * the browser has a saved session.
+         * Reconnect existing party only when
+         * the browser actually has a saved
+         * party session.
          */
 
         if (
@@ -525,59 +525,68 @@ function connect() {
     };
 
 
-    ws.onmessage = event => {
+    ws.onmessage =
+        event => {
 
-        let data;
-
-
-        try {
-
-            data =
-                JSON.parse(
-                    event.data
-                );
-
-        } catch {
-
-            return;
-
-        }
+            let data;
 
 
-        handleMessage(
-            data
-        );
+            try {
 
-    };
+                data =
+                    JSON.parse(
+                        event.data
+                    );
 
+            } catch {
 
-    ws.onerror = () => {
+                return;
 
-        connectionStatus.textContent =
-            "CONNECTION ERROR";
-
-    };
-
-
-    ws.onclose = () => {
-
-        connectionStatus.textContent =
-            "DISCONNECTED";
+            }
 
 
-        if (
-            !leaving &&
-            !gameStarting
-        ) {
-
-            setTimeout(
-                connect,
-                2000
+            handleMessage(
+                data
             );
 
-        }
+        };
 
-    };
+
+    ws.onerror =
+        () => {
+
+            connectionStatus.textContent =
+                "CONNECTION ERROR";
+
+        };
+
+
+    ws.onclose =
+        () => {
+
+            connectionStatus.textContent =
+                "DISCONNECTED";
+
+
+            /*
+             * Don't constantly reconnect after
+             * the user intentionally leaves or
+             * after we're already entering game.
+             */
+
+            if (
+                !leaving &&
+                !gameStarting
+            ) {
+
+                setTimeout(
+                    connect,
+                    2000
+                );
+
+            }
+
+        };
 
 }
 
@@ -612,10 +621,10 @@ function send(
 
 
 /* =========================================================
-   PARTY STATUS CHECK
+   PARTY STATUS
 ========================================================= */
 
-function checkParty() {
+function checkPartyStatus() {
 
     if (
         !partyCode ||
@@ -644,24 +653,24 @@ function checkParty() {
 }
 
 
-function startPartyChecking() {
+function startPartyStatusChecking() {
 
-    stopPartyChecking();
+    stopPartyStatusChecking();
 
 
-    checkParty();
+    checkPartyStatus();
 
 
     partyStatusTimer =
         setInterval(
-            checkParty,
+            checkPartyStatus,
             1000
         );
 
 }
 
 
-function stopPartyChecking() {
+function stopPartyStatusChecking() {
 
     if (
         partyStatusTimer
@@ -680,15 +689,16 @@ function stopPartyChecking() {
 
 
 /* =========================================================
-   SERVER MESSAGES
+   SERVER MESSAGE HANDLER
 ========================================================= */
 
 function handleMessage(
     data
 ) {
 
-
-    /* SESSION */
+    /* ---------------------------------------
+       SESSION
+    ---------------------------------------- */
 
     if (
         data.type ===
@@ -716,7 +726,9 @@ function handleMessage(
     }
 
 
-    /* PARTY CREATED */
+    /* ---------------------------------------
+       PARTY CREATED
+    ---------------------------------------- */
 
     if (
         data.type ===
@@ -727,6 +739,9 @@ function handleMessage(
             data.code;
 
 
+        /*
+         * The server sends the token here too.
+         */
         if (
             data.token
         ) {
@@ -756,6 +771,9 @@ function handleMessage(
         showParty();
 
 
+        /*
+         * HOST GETS START GAME.
+         */
         startBtn.style.display =
             "block";
 
@@ -766,7 +784,7 @@ function handleMessage(
             "START GAME";
 
 
-        startPartyChecking();
+        startPartyStatusChecking();
 
 
         return;
@@ -774,7 +792,9 @@ function handleMessage(
     }
 
 
-    /* PARTY JOINED */
+    /* ---------------------------------------
+       PARTY JOINED
+    ---------------------------------------- */
 
     if (
         data.type ===
@@ -830,7 +850,7 @@ function handleMessage(
         }
 
 
-        startPartyChecking();
+        startPartyStatusChecking();
 
 
         return;
@@ -838,7 +858,9 @@ function handleMessage(
     }
 
 
-    /* LOBBY */
+    /* ---------------------------------------
+       LOBBY UPDATE
+    ---------------------------------------- */
 
     if (
         data.type ===
@@ -852,6 +874,7 @@ function handleMessage(
             partyCode =
                 data.code;
 
+
             partyCodeElement.textContent =
                 data.code;
 
@@ -864,15 +887,11 @@ function handleMessage(
         );
 
 
-        if (
-            data.youAreHost ===
-            true
-        ) {
-
-            isHost =
-                true;
-
-        }
+        /*
+         * This is the safest host check.
+         */
+        isHost =
+            data.youAreHost === true;
 
 
         if (
@@ -913,13 +932,18 @@ function handleMessage(
     }
 
 
-    /* PARTY STATUS */
+    /* ---------------------------------------
+       PARTY STATUS
+    ---------------------------------------- */
 
     if (
         data.type ===
         "partyStatus"
     ) {
 
+        /*
+         * Keep this player's token current.
+         */
         if (
             data.token
         ) {
@@ -953,9 +977,10 @@ function handleMessage(
 
 
         /*
-         * This is the fallback that makes
-         * the friend enter even if their
-         * browser missed gameStarted.
+         * If the host has already started,
+         * enter the game.
+         *
+         * This is the backup for friends.
          */
 
         if (
@@ -963,7 +988,7 @@ function handleMessage(
             true
         ) {
 
-            stopPartyChecking();
+            stopPartyStatusChecking();
 
 
             goToGame();
@@ -976,12 +1001,20 @@ function handleMessage(
     }
 
 
-    /* GAME STARTED */
+    /* ---------------------------------------
+       GAME STARTED
+    ---------------------------------------- */
 
     if (
         data.type ===
         "gameStarted"
     ) {
+
+        /*
+         * IMPORTANT:
+         * The server gives this browser
+         * its own token.
+         */
 
         if (
             data.token
@@ -1015,8 +1048,16 @@ function handleMessage(
         }
 
 
-        stopPartyChecking();
+        stopPartyStatusChecking();
 
+
+        /*
+         * IMPORTANT:
+         *
+         * Don't stop this because gameStarting
+         * is already true. goToGame() is supposed
+         * to be called now.
+         */
 
         goToGame();
 
@@ -1026,50 +1067,41 @@ function handleMessage(
     }
 
 
-    /* ERROR */
+    /* ---------------------------------------
+       ERROR
+    ---------------------------------------- */
 
     if (
         data.type ===
         "error"
     ) {
 
-        const message =
+        partyError.textContent =
             data.message ||
             "Something went wrong.";
 
 
-        partyError.textContent =
-            message;
-
+        /*
+         * Don't erase the session just because
+         * of an unrelated error.
+         */
 
         if (
-            message
-                .toLowerCase()
-                .includes(
-                    "session"
-                )
+            gameStarting
         ) {
 
-            sessionToken =
-                "";
+            gameStarting =
+                false;
 
-            localStorage.removeItem(
-                "backroomsSession"
-            );
+
+            startBtn.disabled =
+                false;
+
+
+            startBtn.textContent =
+                "START GAME";
 
         }
-
-
-        gameStarting =
-            false;
-
-
-        startBtn.disabled =
-            false;
-
-
-        startBtn.textContent =
-            "START GAME";
 
 
         return;
@@ -1080,7 +1112,7 @@ function handleMessage(
 
 
 /* =========================================================
-   PARTY SCREEN
+   SHOW PARTY
 ========================================================= */
 
 function showParty() {
@@ -1102,18 +1134,21 @@ function showParty() {
 
 
 /* =========================================================
-   ENTER GAME
+   GO TO GAME
 ========================================================= */
 
 function goToGame() {
 
-    if (
-        gameStarting
-    ) {
-
-        return;
-
-    }
+    /*
+     * THIS IS THE IMPORTANT FIX.
+     *
+     * Do NOT write:
+     *
+     * if (gameStarting) return;
+     *
+     * because the HOST sets gameStarting=true
+     * before receiving gameStarted.
+     */
 
 
     if (
@@ -1122,6 +1157,18 @@ function goToGame() {
 
         partyError.textContent =
             "Party code is missing.";
+
+        gameStarting =
+            false;
+
+
+        startBtn.disabled =
+            false;
+
+
+        startBtn.textContent =
+            "START GAME";
+
 
         return;
 
@@ -1135,6 +1182,18 @@ function goToGame() {
         partyError.textContent =
             "Game session is missing.";
 
+        gameStarting =
+            false;
+
+
+        startBtn.disabled =
+            false;
+
+
+        startBtn.textContent =
+            "START GAME";
+
+
         return;
 
     }
@@ -1144,10 +1203,17 @@ function goToGame() {
         true;
 
 
-    stopPartyChecking();
+    stopPartyStatusChecking();
 
 
-    const url =
+    /*
+     * Give game.html BOTH:
+     *
+     * party code
+     * session token
+     */
+
+    const gameURL =
         "game.html?party=" +
         encodeURIComponent(
             partyCode
@@ -1159,13 +1225,13 @@ function goToGame() {
 
 
     window.location.href =
-        url;
+        gameURL;
 
 }
 
 
 /* =========================================================
-   PLAYERS
+   UPDATE PLAYERS
 ========================================================= */
 
 function updatePlayers(
@@ -1177,7 +1243,10 @@ function updatePlayers(
 
 
     players.forEach(
-        (p, index) => {
+        (
+            p,
+            index
+        ) => {
 
             const row =
                 document.createElement(
@@ -1318,6 +1387,9 @@ document.getElementById(
     );
 
 
+    /*
+     * Creator is host.
+     */
     isHost =
         true;
 
@@ -1346,9 +1418,11 @@ document.getElementById(
     error.textContent =
         "";
 
+
     joinBox.classList.remove(
         "hidden"
     );
+
 
     codeInput.focus();
 
@@ -1393,8 +1467,7 @@ document.getElementById(
 
 
     if (
-        code.length !==
-        5
+        code.length !== 5
     ) {
 
         error.textContent =
@@ -1485,6 +1558,10 @@ startBtn.onclick = () => {
     }
 
 
+    /*
+     * Mark that we're waiting for the
+     * server to tell us the game started.
+     */
     gameStarting =
         true;
 
@@ -1511,15 +1588,13 @@ startBtn.onclick = () => {
    LEAVE
 ========================================================= */
 
-document.getElementById(
-    "leaveBtn"
-).onclick = () => {
+leaveBtn.onclick = () => {
 
     leaving =
         true;
 
 
-    stopPartyChecking();
+    stopPartyStatusChecking();
 
 
     localStorage.removeItem(
@@ -1620,7 +1695,7 @@ codeInput.addEventListener(
 
 
 /* =========================================================
-   START
+   CONNECT
 ========================================================= */
 
 connect();
