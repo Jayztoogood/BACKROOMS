@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THE BACKROOMS</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+}
+
+body {
+    min-height: 100vh;
+    overflow: hidden;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+
+    background:
+        radial-gradient(circle at center,
+            #4a451b 0%,
+            #27250e 35%,
+            #0c0b07 100%);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background:
+        repeating-linear-gradient(
+            0deg,
+            transparent 0px,
+            transparent 3px,
+            rgba(255,255,255,.035) 4px
+        );
+
+    opacity: .5;
+}
+
+body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            ellipse at center,
+            transparent 30%,
+            rgba(0,0,0,.45) 100%
+        );
+}
+
+.container {
+    position: relative;
+    z-index: 5;
+    width: 92%;
+    max-width: 700px;
+    text-align: center;
+}
+
+.title {
+    font-size: clamp(50px, 10vw, 105px);
+    font-weight: 900;
+    letter-spacing: 13px;
+    color: #d8ce72;
+
+    text-shadow:
+        0 0 8px #a69c49,
+        0 0 25px rgba(220,205,90,.3);
+
+    margin-bottom: 8px;
+}
+
+.subtitle {
+    color: #999;
+    font-size: 13px;
+    letter-spacing: 7px;
+    margin-bottom: 38px;
+}
+
+.menu {
+    width: 100%;
+    padding: 35px;
+
+    background: rgba(0,0,0,.52);
+
+    border: 1px solid rgba(220,205,100,.25);
+
+    box-shadow: 0 0 60px rgba(0,0,0,.6);
+
+    backdrop-filter: blur(8px);
+}
+
+.label {
+    display: block;
+    margin-bottom: 8px;
+
+    color: #888;
+
+    font-size: 10px;
+    letter-spacing: 3px;
+}
+
+input {
+    width: 100%;
+    height: 52px;
+
+    padding: 0 15px;
+    margin-bottom: 13px;
+
+    background: rgba(255,255,255,.045);
+
+    border: 1px solid #66603b;
+
+    outline: none;
+
+    color: white;
+
+    text-align: center;
+
+    font-size: 16px;
+    letter-spacing: 2px;
+
+    transition: .2s;
+}
+
+input::placeholder {
+    color: #666;
+}
+
+input:focus {
+    border-color: #d7ca63;
+
+    background: rgba(220,205,90,.06);
+
+    box-shadow:
+        0 0 20px rgba(220,205,90,.12);
+}
+
+button {
+    width: 100%;
+    height: 52px;
+
+    border: 1px solid #a89e50;
+
+    background: rgba(210,198,80,.08);
+
+    color: #eee;
+
+    font-size: 15px;
+    font-weight: bold;
+
+    letter-spacing: 4px;
+
+    cursor: pointer;
+
+    transition:
+        background .2s,
+        box-shadow .2s,
+        transform .15s;
+}
+
+button:hover {
+    background: rgba(210,198,80,.2);
+
+    box-shadow:
+        0 0 25px rgba(220,205,90,.15);
+
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+.joinSection {
+    margin-top: 28px;
+    padding-top: 28px;
+
+    border-top:
+        1px solid rgba(255,255,255,.08);
+}
+
+#error {
+    min-height: 22px;
+
+    margin-top: 15px;
+
+    color: #d94b4b;
+
+    font-size: 13px;
+}
+
+#partyScreen {
+    display: none;
+}
+
+.codeLabel {
+    color: #777;
+
+    font-size: 11px;
+    letter-spacing: 3px;
+}
+
+.partyCode {
+    margin: 15px 0;
+
+    color: #e0d66d;
+
+    font-size: 48px;
+    font-weight: 900;
+
+    letter-spacing: 12px;
+
+    text-shadow:
+        0 0 20px rgba(220,205,90,.35);
+}
+
+.shareText {
+    color: #777;
+
+    font-size: 12px;
+
+    line-height: 1.6;
+
+    margin-bottom: 25px;
+}
+
+.players {
+    width: 100%;
+    margin-bottom: 20px;
+
+    text-align: left;
+}
+
+.player {
+    padding: 13px 15px;
+
+    margin-bottom: 5px;
+
+    background: rgba(255,255,255,.04);
+
+    border-left:
+        2px solid transparent;
+
+    color: #bbb;
+
+    font-size: 14px;
+}
+
+.player.host {
+    color: #e0d66d;
+
+    border-left-color:
+        #d6c957;
+}
+
+.waiting {
+    margin-top: 14px;
+
+    color: #666;
+
+    font-size: 12px;
+
+    letter-spacing: 1px;
+}
+
+.footer {
+    margin-top: 20px;
+
+    color: #555;
+
+    font-size: 10px;
+
+    letter-spacing: 2px;
+}
+
+@media(max-width:600px) {
+    .menu {
+        padding: 25px 20px;
+    }
+
+    .title {
+        letter-spacing: 7px;
+    }
+
+    .partyCode {
+        font-size: 38px;
+        letter-spacing: 8px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div id="mainMenu">
+
+<div class="title">
+LEVEL 0
+</div>
+
+<div class="subtitle">
+THE BACKROOMS
+</div>
+
+<div class="menu">
+
+<label class="label">
+ENTER YOUR NAME
+</label>
+
+<input
+id="nameInput"
+type="text"
+maxlength="16"
+placeholder="PLAYER"
+autocomplete="off"
+>
+
+<button id="createButton">
+CREATE PARTY
+</button>
+
+<div class="joinSection">
+
+<label class="label">
+HAVE A PARTY CODE?
+</label>
+
+<input
+id="codeInput"
+type="text"
+maxlength="5"
+placeholder="XXXXX"
+autocomplete="off"
+>
+
+<button id="joinButton">
+JOIN PARTY
+</button>
+
+</div>
+
+<div id="error"></div>
+
+</div>
+
+<div class="footer">
+YOU SHOULDN'T BE HERE
+</div>
+
+</div>
+
+
+<div id="partyScreen">
+
+<div class="title">
+PARTY
+</div>
+
+<div class="subtitle">
+LEVEL 0
+</div>
+
+<div class="menu">
+
+<div class="codeLabel">
+YOUR PARTY CODE
+</div>
+
+<div
+class="partyCode"
+id="partyCode"
+>
+-----
+</div>
+
+<div class="shareText">
+Give this code to your friends.<br>
+Up to 8 players can enter the party.
+</div>
+
+<div
+class="players"
+id="players"
+></div>
+
+<button
+id="startGame"
+style="display:none;"
+>
+START GAME
+</button>
+
+<div
+class="waiting"
+id="waiting"
+>
+Waiting for the host...
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let socket = null;
+let myId = null;
+let partyCode = null;
+let isHost = false;
+
+function connect() {
+
+    if (
+        socket &&
+        (
+            socket.readyState === WebSocket.OPEN ||
+            socket.readyState === WebSocket.CONNECTING
+        )
+    ) {
+        return;
+    }
+
+    const protocol =
+        location.protocol === "https:"
+        ? "wss:"
+        : "ws:";
+
+    socket =
+        new WebSocket(
+            `${protocol}//${location.host}`
+        );
+
+    socket.onopen = () => {
+        console.log("Connected.");
+    };
+
+    socket.onmessage = event => {
+
+        let data;
+
+        try {
+            data = JSON.parse(event.data);
+        } catch {
+            return;
+        }
+
+        handleMessage(data);
+    };
+
+    socket.onerror = () => {
+
+        showError(
+            "Could not connect to the server."
+        );
+    };
+}
+
+function send(data) {
+
+    if (
+        socket &&
+        socket.readyState === WebSocket.OPEN
+    ) {
+        socket.send(
+            JSON.stringify(data)
+        );
+    }
+}
+
+function sendWhenConnected(data) {
+
+    if (
+        socket &&
+        socket.readyState === WebSocket.OPEN
+    ) {
+        send(data);
+        return;
+    }
+
+    connect();
+
+    const wait =
+        setInterval(() => {
+
+            if (
+                socket &&
+                socket.readyState === WebSocket.OPEN
+            ) {
+
+                clearInterval(wait);
+
+                send(data);
+            }
+
+        }, 50);
+
+    setTimeout(() => {
+        clearInterval(wait);
+    }, 5000);
+}
+
+function getName() {
+
+    let name =
+        document
+        .getElementById("nameInput")
+        .value
+        .trim();
+
+    if (!name) {
+
+        name =
+            "Player" +
+            Math.floor(
+                Math.random() * 999
+            );
+    }
+
+    localStorage.setItem(
+        "playerName",
+        name
+    );
+
+    return name;
+}
+
+function showError(message) {
+
+    document.getElementById(
+        "error"
+    ).textContent = message;
+}
+
+function showPartyScreen() {
+
+    document.getElementById(
+        "mainMenu"
+    ).style.display = "none";
+
+    document.getElementById(
+        "partyScreen"
+    ).style.display = "block";
+}
+
+function updateLobby(data) {
+
+    partyCode = data.code;
+
+    isHost =
+        data.hostId === myId;
+
+    document.getElementById(
+        "partyCode"
+    ).textContent =
+        data.code;
+
+    const players =
+        document.getElementById(
+            "players"
+        );
+
+    players.innerHTML = "";
+
+    data.players.forEach(player => {
+
+        const div =
+            document.createElement("div");
+
+        div.className = "player";
+
+        if (
+            player.id === data.hostId
+        ) {
+
+            div.classList.add("host");
+
+            div.textContent =
+                "👑 " +
+                player.name +
+                " — HOST";
+
+        } else {
+
+            div.textContent =
+                "👤 " +
+                player.name;
+        }
+
+        players.appendChild(div);
+    });
+
+    const start =
+        document.getElementById(
+            "startGame"
+        );
+
+    const waiting =
+        document.getElementById(
+            "waiting"
+        );
+
+    if (
+        isHost &&
+        !data.started
+    ) {
+
+        start.style.display =
+            "block";
+
+        waiting.textContent =
+            "You are the host. Start when everyone is ready.";
+
+    } else {
+
+        start.style.display =
+            "none";
+
+        waiting.textContent =
+            "Waiting for the host to start the game...";
+    }
+}
+
+function handleMessage(data) {
+
+    if (data.type === "partyCreated") {
+
+        myId =
+            data.playerId;
+
+        partyCode =
+            data.code;
+
+        showPartyScreen();
+
+    }
+
+    else if (data.type === "partyJoined") {
+
+        myId =
+            data.playerId;
+
+        partyCode =
+            data.code;
+
+        showPartyScreen();
+
+    }
+
+    else if (data.type === "lobby") {
+
+        updateLobby(data);
+
+    }
+
+    else if (data.type === "gameStarted") {
+
+        localStorage.setItem(
+            "partyCode",
+            partyCode
+        );
+
+        window.location.href =
+            "game.html?party=" +
+            encodeURIComponent(
+                partyCode
+            );
+
+    }
+
+    else if (data.type === "error") {
+
+        showError(
+            data.message
+        );
+    }
+}
+
+document.getElementById(
+    "createButton"
+).onclick = () => {
+
+    showError("");
+
+    connect();
+
+    sendWhenConnected({
+
+        type: "createParty",
+
+        name: getName()
+
+    });
+};
+
+document.getElementById(
+    "joinButton"
+).onclick = () => {
+
+    showError("");
+
+    const code =
+        document
+        .getElementById("codeInput")
+        .value
+        .trim()
+        .toUpperCase();
+
+    if (code.length !== 5) {
+
+        showError(
+            "Party codes are 5 characters."
+        );
+
+        return;
+    }
+
+    connect();
+
+    sendWhenConnected({
+
+        type: "joinParty",
+
+        code: code,
+
+        name: getName()
+
+    });
+};
+
+document.getElementById(
+    "startGame"
+).onclick = () => {
+
+    send({
+        type: "startGame"
+    });
+};
+
+document.getElementById(
+    "nameInput"
+).addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            document
+            .getElementById("createButton")
+            .click();
+        }
+    }
+);
+
+document.getElementById(
+    "codeInput"
+).addEventListener(
+    "keydown",
+    event => {
+
+        if (event.key === "Enter") {
+
+            document
+            .getElementById("joinButton")
+            .click();
+        }
+    }
+);
+
+const saved =
+    localStorage.getItem(
+        "playerName"
+    );
+
+if (saved) {
+
+    document.getElementById(
+        "nameInput"
+    ).value = saved;
+}
+
+</script>
+
+</body>
+</html>
