@@ -176,6 +176,8 @@ button:disabled {
     color: #777;
 }
 
+/* Hidden on the main menu.
+   Shown automatically for the host. */
 #startBtn {
     display: none;
 }
@@ -188,6 +190,7 @@ button:disabled {
 
 <div class="center">
 
+    <!-- MAIN MENU -->
     <div class="panel" id="menu">
 
         <h1>THE BACKROOMS</h1>
@@ -236,6 +239,7 @@ button:disabled {
     </div>
 
 
+    <!-- PARTY -->
     <div class="panel hidden" id="party">
 
         <div class="small">
@@ -252,6 +256,7 @@ button:disabled {
 
         <div class="players" id="players"></div>
 
+        <!-- HOST START BUTTON -->
         <button id="startBtn">
             START GAME
         </button>
@@ -272,6 +277,11 @@ button:disabled {
 const SERVER =
     "wss://backrooms-avnx.onrender.com";
 
+
+/* =========================================================
+   STATE
+========================================================= */
+
 let ws = null;
 
 let playerName =
@@ -290,7 +300,9 @@ let reconnectTimer = null;
 let leaving = false;
 
 
-/* ELEMENTS */
+/* =========================================================
+   ELEMENTS
+========================================================= */
 
 const menu =
     document.getElementById("menu");
@@ -333,7 +345,9 @@ nameInput.value =
     playerName;
 
 
-/* CONNECT */
+/* =========================================================
+   CONNECT
+========================================================= */
 
 function connect() {
 
@@ -359,12 +373,10 @@ function connect() {
         connectionStatus.textContent =
             "CONNECTED";
 
-
         /*
-         * Only attempt reconnect if we actually
-         * have a saved party session.
+         * Only reconnect if a previous party
+         * session actually exists.
          */
-
         if (
             sessionToken &&
             partyCode
@@ -389,9 +401,7 @@ function connect() {
         try {
 
             data =
-                JSON.parse(
-                    event.data
-                );
+                JSON.parse(event.data);
 
         } catch {
 
@@ -436,7 +446,9 @@ function connect() {
 }
 
 
-/* SEND */
+/* =========================================================
+   SEND
+========================================================= */
 
 function send(data) {
 
@@ -459,16 +471,18 @@ function send(data) {
 }
 
 
-/* SERVER MESSAGES */
+/* =========================================================
+   SERVER MESSAGES
+========================================================= */
 
 function handleMessage(data) {
 
 
-    /* SESSION */
-
+    /*
+     * SESSION TOKEN
+     */
     if (
-        data.type ===
-        "session"
+        data.type === "session"
     ) {
 
         sessionToken =
@@ -483,16 +497,19 @@ function handleMessage(data) {
     }
 
 
-    /* PARTY CREATED */
-
+    /*
+     * PARTY CREATED
+     */
     if (
-        data.type ===
-        "partyCreated"
+        data.type === "partyCreated"
     ) {
 
         partyCode =
             data.code;
 
+        /*
+         * Creator is ALWAYS host.
+         */
         isHost =
             true;
 
@@ -505,7 +522,7 @@ function handleMessage(data) {
 
 
         /*
-         * HOST GETS START GAME.
+         * SHOW START GAME IMMEDIATELY.
          */
         startBtn.style.display =
             "block";
@@ -520,16 +537,20 @@ function handleMessage(data) {
     }
 
 
-    /* PARTY JOINED */
-
+    /*
+     * PARTY JOINED
+     */
     if (
-        data.type ===
-        "partyJoined"
+        data.type === "partyJoined"
     ) {
 
         partyCode =
             data.code;
 
+        /*
+         * The server will tell us if this is
+         * a host reconnect.
+         */
         isHost =
             data.host === true;
 
@@ -541,27 +562,20 @@ function handleMessage(data) {
         showParty();
 
 
-        if (isHost) {
-
-            startBtn.style.display =
-                "block";
-
-        } else {
-
-            startBtn.style.display =
-                "none";
-
-        }
+        startBtn.style.display =
+            isHost
+                ? "block"
+                : "none";
 
         return;
     }
 
 
-    /* LOBBY */
-
+    /*
+     * LOBBY UPDATE
+     */
     if (
-        data.type ===
-        "lobby"
+        data.type === "lobby"
     ) {
 
         if (data.code) {
@@ -581,9 +595,9 @@ function handleMessage(data) {
 
 
         /*
-         * Explicit host information.
+         * SERVER EXPLICITLY IDENTIFIES
+         * WHETHER WE ARE THE HOST.
          */
-
         if (
             data.youAreHost === true
         ) {
@@ -595,9 +609,9 @@ function handleMessage(data) {
 
 
         /*
-         * Compatibility with older server.
+         * Compatibility with the server's
+         * host token.
          */
-
         if (
             data.host &&
             data.host ===
@@ -632,11 +646,11 @@ function handleMessage(data) {
     }
 
 
-    /* GAME STARTED */
-
+    /*
+     * GAME STARTED
+     */
     if (
-        data.type ===
-        "gameStarted"
+        data.type === "gameStarted"
     ) {
 
         goToGame();
@@ -645,11 +659,11 @@ function handleMessage(data) {
     }
 
 
-    /* ERROR */
-
+    /*
+     * ERROR
+     */
     if (
-        data.type ===
-        "error"
+        data.type === "error"
     ) {
 
         const message =
@@ -678,7 +692,9 @@ function handleMessage(data) {
 }
 
 
-/* SHOW PARTY */
+/* =========================================================
+   SHOW PARTY
+========================================================= */
 
 function showParty() {
 
@@ -696,9 +712,16 @@ function showParty() {
 }
 
 
-/* GO TO GAME */
+/* =========================================================
+   GO TO GAME
+========================================================= */
 
 function goToGame() {
+
+    /*
+     * The game needs BOTH the party code
+     * and session token.
+     */
 
     if (
         !partyCode ||
@@ -706,19 +729,14 @@ function goToGame() {
     ) {
 
         partyError.textContent =
-            "Missing party connection.";
+            "Your game session is missing.";
 
         return;
 
     }
 
 
-    /*
-     * Pass the session token directly into
-     * game.html.
-     */
-
-    const url =
+    const gameURL =
         "game.html?party=" +
         encodeURIComponent(
             partyCode
@@ -730,12 +748,14 @@ function goToGame() {
 
 
     window.location.href =
-        url;
+        gameURL;
 
 }
 
 
-/* PLAYERS */
+/* =========================================================
+   PLAYERS
+========================================================= */
 
 function updatePlayers(
     players
@@ -761,6 +781,7 @@ function updatePlayers(
                 document.createElement(
                     "span"
                 );
+
 
             name.textContent =
                 p.name ||
@@ -822,7 +843,9 @@ function updatePlayers(
 }
 
 
-/* CREATE PARTY */
+/* =========================================================
+   CREATE PARTY
+========================================================= */
 
 document.getElementById(
     "createBtn"
@@ -831,13 +854,11 @@ document.getElementById(
     error.textContent =
         "";
 
+
     const name =
         nameInput.value
             .trim()
-            .slice(
-                0,
-                16
-            );
+            .slice(0, 16);
 
 
     if (!name) {
@@ -875,26 +896,28 @@ document.getElementById(
 
 
     /*
-     * Creating a party makes this
-     * browser the host.
+     * Creating a party makes us host.
      */
-
     isHost =
         true;
 
 
     send({
+
         type:
             "createParty",
 
         name:
             playerName
+
     });
 
 };
 
 
-/* JOIN BUTTON */
+/* =========================================================
+   JOIN BUTTON
+========================================================= */
 
 document.getElementById(
     "joinBtn"
@@ -909,7 +932,9 @@ document.getElementById(
 };
 
 
-/* JOIN PARTY */
+/* =========================================================
+   JOIN PARTY
+========================================================= */
 
 document.getElementById(
     "joinConfirm"
@@ -918,13 +943,11 @@ document.getElementById(
     error.textContent =
         "";
 
+
     const name =
         nameInput.value
             .trim()
-            .slice(
-                0,
-                16
-            );
+            .slice(0, 16);
 
 
     const code =
@@ -972,7 +995,6 @@ document.getElementById(
     playerName =
         name;
 
-
     isHost =
         false;
 
@@ -999,7 +1021,9 @@ document.getElementById(
 };
 
 
-/* START GAME */
+/* =========================================================
+   START GAME
+========================================================= */
 
 startBtn.onclick = () => {
 
@@ -1039,18 +1063,22 @@ startBtn.onclick = () => {
 
 
     /*
-     * SERVER will send gameStarted
-     * to every person in the party.
+     * Server broadcasts gameStarted
+     * to EVERY player.
      */
     send({
+
         type:
             "startGame"
+
     });
 
 };
 
 
-/* LEAVE */
+/* =========================================================
+   LEAVE
+========================================================= */
 
 leaveBtn.onclick = () => {
 
@@ -1083,13 +1111,79 @@ leaveBtn.onclick = () => {
     }
 
 
-    window.location.href =
-        "index.html";
+    window.location.reload();
 
 };
 
 
-/* START */
+/* =========================================================
+   ENTER KEY
+========================================================= */
+
+nameInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            document
+                .getElementById(
+                    "createBtn"
+                )
+                .click();
+
+        }
+
+    }
+);
+
+
+codeInput.addEventListener(
+    "keydown",
+    event => {
+
+        if (
+            event.key === "Enter"
+        ) {
+
+            document
+                .getElementById(
+                    "joinConfirm"
+                )
+                .click();
+
+        }
+
+    }
+);
+
+
+/* =========================================================
+   CODE INPUT
+========================================================= */
+
+codeInput.addEventListener(
+    "input",
+    () => {
+
+        codeInput.value =
+            codeInput.value
+                .replace(
+                    /[^A-Za-z0-9]/g,
+                    ""
+                )
+                .toUpperCase()
+                .slice(0, 5);
+
+    }
+);
+
+
+/* =========================================================
+   CONNECT
+========================================================= */
 
 connect();
 
