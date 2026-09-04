@@ -140,12 +140,13 @@ body {
     pointer-events: none;
     z-index: 20;
     opacity: 0;
+    transition: opacity .2s;
 }
 
 #damage {
     position: fixed;
     inset: 0;
-    background: rgba(150, 0, 0, .35);
+    background: rgba(150,0,0,.35);
     opacity: 0;
     pointer-events: none;
     z-index: 15;
@@ -273,7 +274,9 @@ button:hover {
 
     <div class="panel">
 
-        <h1>THE BACKROOMS</h1>
+        <h1>
+            THE BACKROOMS
+        </h1>
 
         <p>
             You don't remember how you got here.
@@ -304,7 +307,9 @@ button:hover {
 
         <p id="endText"></p>
 
-        <button onclick="location.href='index.html'">
+        <button
+            onclick="location.href='index.html'"
+        >
             RETURN TO MENU
         </button>
 
@@ -319,23 +324,19 @@ import * as THREE from
     "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js";
 
 
-/* =====================================================
-   PARTY / SESSION
-===================================================== */
+/* =========================================================
+   PARTY + TOKEN
+========================================================= */
 
 const SERVER =
     "wss://backrooms-avnx.onrender.com";
+
 
 const params =
     new URLSearchParams(
         window.location.search
     );
 
-
-/*
- * IMPORTANT:
- * Get the party from the URL.
- */
 
 const partyCode =
     params.get("party") ||
@@ -346,12 +347,8 @@ const partyCode =
 
 /*
  * IMPORTANT:
- * Get the token from the URL FIRST.
- *
- * This is what fixes the lobby -> game
- * session problem.
+ * Read token from the URL first.
  */
-
 const urlToken =
     params.get("token");
 
@@ -363,7 +360,13 @@ const sessionToken =
     );
 
 
-if (urlToken) {
+/*
+ * Save the token that was passed
+ * by the lobby.
+ */
+if (
+    urlToken
+) {
 
     localStorage.setItem(
         "backroomsSession",
@@ -380,6 +383,12 @@ const playerName =
     "Player";
 
 
+/*
+ * Don't redirect immediately when
+ * something is missing.
+ *
+ * Show a useful error instead.
+ */
 if (
     !partyCode ||
     !sessionToken
@@ -393,7 +402,7 @@ if (
             align-items:center;
             justify-content:center;
             background:#111;
-            color:white;
+            color:#fff;
             font-family:Arial,sans-serif;
             text-align:center;
         ">
@@ -405,9 +414,10 @@ if (
                 <button
                     onclick="location.href='index.html'"
                     style="
-                        padding:14px 24px;
+                        padding:14px 25px;
                         border:0;
                         background:#c0b55e;
+                        color:#111;
                         font-weight:bold;
                         cursor:pointer;
                     "
@@ -421,13 +431,12 @@ if (
     throw new Error(
         "Missing party code or session token."
     );
-
 }
 
 
-/* =====================================================
+/* =========================================================
    STATE
-===================================================== */
+========================================================= */
 
 let ws = null;
 
@@ -458,7 +467,7 @@ let damageCooldown =
 let messageTimer =
     0;
 
-let lastSend =
+let lastPositionSend =
     0;
 
 let yaw =
@@ -471,15 +480,16 @@ let bobTime =
     0;
 
 
-const keys = {};
+const keys =
+    {};
 
 const remotePlayers =
     new Map();
 
 
-/* =====================================================
+/* =========================================================
    PARTY UI
-===================================================== */
+========================================================= */
 
 document.getElementById(
     "partyText"
@@ -488,9 +498,9 @@ document.getElementById(
     partyCode;
 
 
-/* =====================================================
+/* =========================================================
    THREE
-===================================================== */
+========================================================= */
 
 const scene =
     new THREE.Scene();
@@ -558,9 +568,9 @@ document
     );
 
 
-/* =====================================================
+/* =========================================================
    LIGHTING
-===================================================== */
+========================================================= */
 
 const ambient =
     new THREE.HemisphereLight(
@@ -627,9 +637,9 @@ scene.add(
 );
 
 
-/* =====================================================
+/* =========================================================
    MATERIALS
-===================================================== */
+========================================================= */
 
 const wallMaterial =
     new THREE.MeshStandardMaterial({
@@ -652,9 +662,9 @@ const ceilingMaterial =
     });
 
 
-/* =====================================================
+/* =========================================================
    WORLD
-===================================================== */
+========================================================= */
 
 const CELL =
     5;
@@ -745,7 +755,8 @@ scene.add(
 
 /* WALLS */
 
-const walls = [];
+const walls =
+    [];
 
 
 for (
@@ -823,9 +834,9 @@ for (
 }
 
 
-/* =====================================================
+/* =========================================================
    LIGHTS
-===================================================== */
+========================================================= */
 
 for (
     let z = 1;
@@ -907,15 +918,15 @@ for (
 }
 
 
-/* =====================================================
+/* =========================================================
    KEY
-===================================================== */
+========================================================= */
 
 const key =
     new THREE.Group();
 
 
-const ring =
+const keyRing =
     new THREE.Mesh(
         new THREE.TorusGeometry(
             .25,
@@ -932,11 +943,11 @@ const ring =
 
 
 key.add(
-    ring
+    keyRing
 );
 
 
-const handle =
+const keyHandle =
     new THREE.Mesh(
         new THREE.BoxGeometry(
             .08,
@@ -951,19 +962,18 @@ const handle =
     );
 
 
-handle.position.y =
+keyHandle.position.y =
     -.28;
 
 
 key.add(
-    handle
+    keyHandle
 );
 
 
 /*
- * Key position.
+ * KEY LOCATION
  */
-
 key.position.set(
     25,
     1.2,
@@ -994,15 +1004,15 @@ scene.add(
 );
 
 
-/* =====================================================
+/* =========================================================
    EXIT
-===================================================== */
+========================================================= */
 
 const exit =
     new THREE.Group();
 
 
-const door =
+const exitDoor =
     new THREE.Mesh(
         new THREE.BoxGeometry(
             2.4,
@@ -1016,11 +1026,11 @@ const door =
 
 
 exit.add(
-    door
+    exitDoor
 );
 
 
-const sign =
+const exitSign =
     new THREE.Mesh(
         new THREE.BoxGeometry(
             2.2,
@@ -1035,12 +1045,12 @@ const sign =
     );
 
 
-sign.position.y =
+exitSign.position.y =
     2;
 
 
 exit.add(
-    sign
+    exitSign
 );
 
 
@@ -1056,9 +1066,9 @@ scene.add(
 );
 
 
-/* =====================================================
+/* =========================================================
    MONSTER
-===================================================== */
+========================================================= */
 
 const monster =
     new THREE.Group();
@@ -1162,9 +1172,9 @@ scene.add(
 );
 
 
-/* =====================================================
+/* =========================================================
    PLAYER
-===================================================== */
+========================================================= */
 
 const player =
     new THREE.Vector3(
@@ -1179,9 +1189,9 @@ camera.position.copy(
 );
 
 
-/* =====================================================
+/* =========================================================
    COLLISION
-===================================================== */
+========================================================= */
 
 function collides(
     position
@@ -1235,9 +1245,9 @@ function collides(
 }
 
 
-/* =====================================================
+/* =========================================================
    INPUT
-===================================================== */
+========================================================= */
 
 window.addEventListener(
     "keydown",
@@ -1293,7 +1303,8 @@ renderer.domElement.addEventListener(
             !gameEnded
         ) {
 
-            renderer.domElement.requestPointerLock();
+            renderer.domElement
+                .requestPointerLock();
 
         }
 
@@ -1347,9 +1358,9 @@ document.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    NETWORK
-===================================================== */
+========================================================= */
 
 function connectServer() {
 
@@ -1390,6 +1401,7 @@ function connectServer() {
 
         let data;
 
+
         try {
 
             data =
@@ -1407,6 +1419,14 @@ function connectServer() {
         handleNetwork(
             data
         );
+
+    };
+
+
+    ws.onerror = () => {
+
+        connected =
+            false;
 
     };
 
@@ -1430,18 +1450,8 @@ function connectServer() {
 
     };
 
-
-    ws.onerror = () => {
-
-        connected =
-            false;
-
-    };
-
 }
 
-
-/* SEND NETWORK */
 
 function networkSend(
     data
@@ -1464,8 +1474,6 @@ function networkSend(
 }
 
 
-/* NETWORK HANDLER */
-
 function handleNetwork(
     data
 ) {
@@ -1476,8 +1484,7 @@ function handleNetwork(
     ) {
 
         keyCollected =
-            data.keyCollected ===
-            true;
+            data.keyCollected === true;
 
 
         if (
@@ -1495,7 +1502,9 @@ function handleNetwork(
 
         updateObjective();
 
+
         return;
+
     }
 
 
@@ -1508,7 +1517,9 @@ function handleNetwork(
             data.players || []
         );
 
+
         return;
+
     }
 
 
@@ -1524,6 +1535,7 @@ function handleNetwork(
         key.visible =
             false;
 
+
         keyGlow.visible =
             false;
 
@@ -1537,6 +1549,7 @@ function handleNetwork(
 
 
         return;
+
     }
 
 
@@ -1553,7 +1566,9 @@ function handleNetwork(
                 : "You escaped."
         );
 
+
         return;
+
     }
 
 
@@ -1570,7 +1585,9 @@ function handleNetwork(
                 : "Something found you."
         );
 
+
         return;
+
     }
 
 
@@ -1589,9 +1606,9 @@ function handleNetwork(
 }
 
 
-/* =====================================================
+/* =========================================================
    REMOTE PLAYERS
-===================================================== */
+========================================================= */
 
 function createRemotePlayer(
     remote
@@ -1653,6 +1670,7 @@ function createRemotePlayer(
     canvas.width =
         512;
 
+
     canvas.height =
         128;
 
@@ -1689,7 +1707,7 @@ function createRemotePlayer(
         );
 
 
-    const sprite =
+    const label =
         new THREE.Sprite(
             new THREE.SpriteMaterial({
                 map:
@@ -1700,19 +1718,19 @@ function createRemotePlayer(
         );
 
 
-    sprite.scale.set(
+    label.scale.set(
         3,
         .75,
         1
     );
 
 
-    sprite.position.y =
+    label.position.y =
         2.9;
 
 
     group.add(
-        sprite
+        label
     );
 
 
@@ -1842,9 +1860,9 @@ function syncPlayers(
 }
 
 
-/* =====================================================
-   MOVEMENT
-===================================================== */
+/* =========================================================
+   PLAYER MOVEMENT
+========================================================= */
 
 function updatePlayer(
     delta
@@ -1862,24 +1880,49 @@ function updatePlayer(
     let forward =
         0;
 
+
     let strafe =
         0;
 
 
-    if (keys.KeyW)
-        forward += 1;
+    if (
+        keys.KeyW
+    ) {
+
+        forward +=
+            1;
+
+    }
 
 
-    if (keys.KeyS)
-        forward -= 1;
+    if (
+        keys.KeyS
+    ) {
+
+        forward -=
+            1;
+
+    }
 
 
-    if (keys.KeyD)
-        strafe += 1;
+    if (
+        keys.KeyD
+    ) {
+
+        strafe +=
+            1;
+
+    }
 
 
-    if (keys.KeyA)
-        strafe -= 1;
+    if (
+        keys.KeyA
+    ) {
+
+        strafe -=
+            1;
+
+    }
 
 
     const moving =
@@ -1887,7 +1930,7 @@ function updatePlayer(
         strafe !== 0;
 
 
-    let sprint =
+    let sprinting =
         keys.ShiftLeft ||
         keys.ShiftRight;
 
@@ -1896,21 +1939,21 @@ function updatePlayer(
         stamina <= 0
     ) {
 
-        sprint =
+        sprinting =
             false;
 
     }
 
 
     const speed =
-        sprint
+        sprinting
         ? 7.5
         : 4.2;
 
 
     if (
-        moving &&
-        sprint
+        sprinting &&
+        moving
     ) {
 
         stamina -=
@@ -1938,14 +1981,24 @@ function updatePlayer(
         new THREE.Vector3();
 
 
-    if (forward)
+    if (
+        forward
+    ) {
+
         direction.z -=
             forward;
 
+    }
 
-    if (strafe)
+
+    if (
+        strafe
+    ) {
+
         direction.x +=
             strafe;
+
+    }
 
 
     if (
@@ -2016,7 +2069,7 @@ function updatePlayer(
         bobTime +=
             delta *
             (
-                sprint
+                sprinting
                 ? 15
                 : 10
             );
@@ -2028,7 +2081,7 @@ function updatePlayer(
                 bobTime
             ) *
             (
-                sprint
+                sprinting
                 ? .055
                 : .025
             );
@@ -2061,11 +2114,11 @@ function updatePlayer(
 }
 
 
-/* =====================================================
-   KEY / EXIT
-===================================================== */
+/* =========================================================
+   KEY
+========================================================= */
 
-function checkKey() {
+function updateKey() {
 
     if (
         keyCollected
@@ -2108,7 +2161,11 @@ function checkKey() {
 }
 
 
-function checkExit() {
+/* =========================================================
+   EXIT
+========================================================= */
+
+function updateExit() {
 
     if (
         !keyCollected
@@ -2153,9 +2210,9 @@ function checkExit() {
 }
 
 
-/* =====================================================
+/* =========================================================
    MONSTER
-===================================================== */
+========================================================= */
 
 function updateMonster(
     delta
@@ -2339,9 +2396,9 @@ function updateMonster(
 }
 
 
-/* =====================================================
-   OBJECTIVE / UI
-===================================================== */
+/* =========================================================
+   OBJECTIVE
+========================================================= */
 
 function updateObjective() {
 
@@ -2354,6 +2411,10 @@ function updateObjective() {
 
 }
 
+
+/* =========================================================
+   MESSAGE
+========================================================= */
 
 function showMessage(
     text
@@ -2378,6 +2439,10 @@ function showMessage(
 
 }
 
+
+/* =========================================================
+   HUD
+========================================================= */
 
 function updateHUD(
     delta
@@ -2428,9 +2493,9 @@ function updateHUD(
 }
 
 
-/* =====================================================
-   POSITION SYNC
-===================================================== */
+/* =========================================================
+   SEND POSITION
+========================================================= */
 
 function sendPosition() {
 
@@ -2449,7 +2514,7 @@ function sendPosition() {
 
     if (
         now -
-        lastSend <
+        lastPositionSend <
         70
     ) {
 
@@ -2458,7 +2523,7 @@ function sendPosition() {
     }
 
 
-    lastSend =
+    lastPositionSend =
         now;
 
 
@@ -2481,9 +2546,9 @@ function sendPosition() {
 }
 
 
-/* =====================================================
-   END
-===================================================== */
+/* =========================================================
+   END GAME
+========================================================= */
 
 function finishGame(
     won,
@@ -2540,9 +2605,9 @@ function finishGame(
 }
 
 
-/* =====================================================
-   PLAY
-===================================================== */
+/* =========================================================
+   PLAY BUTTON
+========================================================= */
 
 document.getElementById(
     "playButton"
@@ -2561,9 +2626,9 @@ document.getElementById(
 };
 
 
-/* =====================================================
+/* =========================================================
    RESIZE
-===================================================== */
+========================================================= */
 
 window.addEventListener(
     "resize",
@@ -2586,18 +2651,18 @@ window.addEventListener(
 );
 
 
-/* =====================================================
+/* =========================================================
    START
-===================================================== */
+========================================================= */
 
 updateObjective();
 
 connectServer();
 
 
-/* =====================================================
-   LOOP
-===================================================== */
+/* =========================================================
+   ANIMATION
+========================================================= */
 
 const clock =
     new THREE.Clock();
@@ -2622,10 +2687,10 @@ function animate() {
     );
 
 
-    checkKey();
+    updateKey();
 
 
-    checkExit();
+    updateExit();
 
 
     updateMonster(
