@@ -724,13 +724,13 @@ scene.background =
 scene.fog =
     new THREE.FogExp2(
         0x9d9757,
-        0.017
+        0.0105
     );
 
 
 const camera =
     new THREE.PerspectiveCamera(
-        76,
+        78,
         innerWidth / innerHeight,
         .05,
         220
@@ -781,7 +781,7 @@ renderer.toneMapping =
 
 
 renderer.toneMappingExposure =
-    .9;
+    1.12;
 
 
 document
@@ -1057,9 +1057,9 @@ const ambient =
 
         0xffffd2,
 
-        0x302b13,
+        0x4b4524,
 
-        .65
+        .92
 
     );
 
@@ -1067,6 +1067,14 @@ const ambient =
 scene.add(
     ambient
 );
+
+// Soft ceiling bounce keeps the classic yellow Backrooms look readable even
+// when the flashlight is off; danger comes from what is chasing you, not darkness.
+const backroomsFill = new THREE.DirectionalLight(0xffefbd, .34);
+backroomsFill.position.set(0, 8, 0);
+backroomsFill.target.position.set(0, 0, 0);
+scene.add(backroomsFill);
+scene.add(backroomsFill.target);
 
 
 const flashlight =
@@ -1332,6 +1340,43 @@ for (
 
 }
 
+// Backrooms architectural trim: baseboards and ceiling rails make the
+// corridors read as a continuous commercial interior instead of boxes.
+const trimMaterial = new THREE.MeshStandardMaterial({
+    color: 0x8f874d,
+    roughness: .92
+});
+const ceilingRailMaterial = new THREE.MeshStandardMaterial({
+    color: 0xd6d0aa,
+    roughness: .8
+});
+for (const w of walls) {
+    const base = new THREE.Mesh(
+        new THREE.BoxGeometry(CELL * .94, .12, CELL * .94),
+        trimMaterial
+    );
+    base.position.set(w.position.x, .08, w.position.z);
+    scene.add(base);
+}
+
+for (let z = 1; z < rows - 1; z += 2) {
+    for (let x = 1; x < cols - 1; x += 2) {
+        if (maze[z][x] !== '.') continue;
+        const railX = new THREE.Mesh(
+            new THREE.BoxGeometry(4.55, .055, .08),
+            ceilingRailMaterial
+        );
+        railX.position.set((x-cols/2)*CELL, 3.92, (z-rows/2)*CELL);
+        scene.add(railX);
+        const railZ = new THREE.Mesh(
+            new THREE.BoxGeometry(.08, .055, 4.55),
+            ceilingRailMaterial
+        );
+        railZ.position.copy(railX.position);
+        scene.add(railZ);
+    }
+}
+
 
 /* =========================================================
    CEILING LIGHTS
@@ -1373,8 +1418,8 @@ for (
 
         const intensity =
             broken
-            ? 0.9
-            : 2.8;
+            ? 1.25
+            : 4.1;
 
 
         const light =
@@ -1385,8 +1430,8 @@ for (
                 intensity,
 
                 broken
-                    ? 10
-                    : 17
+                    ? 11
+                    : 20
 
             );
 
@@ -1448,6 +1493,16 @@ for (
         scene.add(
             fixture
         );
+
+        // Recessed ceiling panel around each fluorescent tube.
+        const panel = new THREE.Mesh(
+            new THREE.BoxGeometry(2.9, .035, .85),
+            new THREE.MeshBasicMaterial({
+                color: broken ? 0x8f8c72 : 0xf4f0c9
+            })
+        );
+        panel.position.set(light.position.x, 3.88, light.position.z);
+        scene.add(panel);
 
 
         ceilingLights.push({
@@ -4704,90 +4759,96 @@ function createHorrorEntity(kind, x, z){
     const g = new THREE.Group();
     g.userData.kind = kind;
     g.userData.phase = Math.random()*10;
-    g.userData.speed = kind === "hound" ? 1.65 : kind === "stalker" ? .72 : 0;
+    g.userData.speed = kind === "hound" ? 2.35 : kind === "stalker" ? 1.05 : 0;
     g.userData.state = "idle";
     g.userData.attackTimer = 0;
     g.userData.lastSeen = 0;
 
+    const dark = makeEntityMaterial(0x070706);
+    const black = makeEntityMaterial(0x010101);
+    const eyeMat = makeEntityMaterial(0xfff8df,0xff2200,7);
+
     if(kind === "stalker"){
-        const body = new THREE.Mesh(
-            new THREE.CapsuleGeometry(.42,1.45,8,14),
-            makeEntityMaterial(0x050505)
-        );
-        body.position.y=1.3;
-        g.add(body);
-
-        const head = new THREE.Mesh(
-            new THREE.SphereGeometry(.48,16,16),
-            makeEntityMaterial(0x090909)
-        );
-        head.position.y=2.45;
-        g.add(head);
-
-        const eyeMat=makeEntityMaterial(0xffffff,0xff0000,5);
-        for(const ex of [-.18,.18]){
-            const eye=new THREE.Mesh(new THREE.SphereGeometry(.055,8,8),eyeMat);
-            eye.position.set(ex,2.48,-.43);
-            g.add(eye);
+        // Very tall humanoid: roughly 3.6m high, with long arms and legs.
+        const pelvis = new THREE.Mesh(new THREE.BoxGeometry(.62,.5,.42),dark);
+        pelvis.position.y=1.45; g.add(pelvis);
+        const torso = new THREE.Mesh(new THREE.CapsuleGeometry(.48,1.25,8,16),dark);
+        torso.scale.set(.92,1.05,.72); torso.position.y=2.25; g.add(torso);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(.16,.2,.3,10),black);
+        neck.position.y=3.08; g.add(neck);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(.38,18,14),black);
+        head.scale.set(.92,1.2,.82); head.position.y=3.42; g.add(head);
+        for(const ex of [-.14,.14]){
+            const eye=new THREE.Mesh(new THREE.SphereGeometry(.045,8,8),eyeMat);
+            eye.position.set(ex,3.46,-.33); g.add(eye);
+        }
+        for(const sx of [-1,1]){
+            const upper=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.92,6,10),dark);
+            upper.position.set(sx*.62,2.35,0); upper.rotation.z=sx*.16; g.add(upper);
+            const lower=new THREE.Mesh(new THREE.CapsuleGeometry(.105,1.0,6,10),black);
+            lower.position.set(sx*.73,1.55,0); lower.rotation.z=sx*.08; g.add(lower);
+            const hand=new THREE.Mesh(new THREE.SphereGeometry(.13,8,8),black);
+            hand.position.set(sx*.77,1.02,0); g.add(hand);
+            const thigh=new THREE.Mesh(new THREE.CapsuleGeometry(.16,1.05,6,10),dark);
+            thigh.position.set(sx*.23,.82,0); thigh.rotation.z=sx*.025; g.add(thigh);
+            const shin=new THREE.Mesh(new THREE.CapsuleGeometry(.13,1.05,6,10),black);
+            shin.position.set(sx*.25,.0,0); g.add(shin);
+            const foot=new THREE.Mesh(new THREE.BoxGeometry(.27,.16,.55),black);
+            foot.position.set(sx*.25,-.55,-.1); g.add(foot);
         }
     }
 
     if(kind === "smiler"){
-        const head = new THREE.Mesh(
-            new THREE.SphereGeometry(.9,24,18),
-            makeEntityMaterial(0x020202)
-        );
-        head.position.y=2.15;
-        g.add(head);
-
-        const eyeMat=makeEntityMaterial(0xffffff,0xffffff,8);
-        for(const ex of [-.3,.3]){
-            const eye=new THREE.Mesh(new THREE.SphereGeometry(.13,12,12),eyeMat);
-            eye.position.set(ex,2.3,-.82);
-            g.add(eye);
+        // Floating tall silhouette so the player can see its scale in the hallway.
+        const body=new THREE.Mesh(new THREE.CapsuleGeometry(.32,2.25,8,12),black);
+        body.position.y=1.8; g.add(body);
+        const head=new THREE.Mesh(new THREE.SphereGeometry(.62,24,18),black);
+        head.position.y=3.18; g.add(head);
+        const smEye=makeEntityMaterial(0xffffff,0xffffff,9);
+        for(const ex of [-.21,.21]){
+            const eye=new THREE.Mesh(new THREE.SphereGeometry(.09,12,12),smEye);
+            eye.position.set(ex,3.25,-.56); g.add(eye);
         }
-        const mouth=new THREE.Mesh(
-            new THREE.TorusGeometry(.38,.055,8,32,Math.PI),
-            makeEntityMaterial(0xffffff,0xffffff,2)
-        );
-        mouth.rotation.x=Math.PI;
-        mouth.position.set(0,1.92,-.84);
-        g.add(mouth);
+        const mouth=new THREE.Mesh(new THREE.TorusGeometry(.27,.045,8,36,Math.PI),smEye);
+        mouth.rotation.x=Math.PI; mouth.position.set(0,2.96,-.58); g.add(mouth);
         g.visible=false;
     }
 
     if(kind === "hound"){
-        const mat=makeEntityMaterial(0x080808);
-        const torso=new THREE.Mesh(new THREE.BoxGeometry(1.35,.7,1.8),mat);
-        torso.position.y=.75;
-        g.add(torso);
-        const head=new THREE.Mesh(new THREE.BoxGeometry(1.0,.65,.8),mat);
-        head.position.set(0,1.05,-1.0);
-        g.add(head);
+        const torso=new THREE.Mesh(new THREE.BoxGeometry(1.2,.68,1.9),dark);
+        torso.position.y=.78; g.add(torso);
+        const neck=new THREE.Mesh(new THREE.CapsuleGeometry(.25,.45,6,10),black);
+        neck.rotation.x=-.7; neck.position.set(0,.98,-.65); g.add(neck);
+        const head=new THREE.Mesh(new THREE.BoxGeometry(.9,.62,.82),black);
+        head.position.set(0,1.05,-1.15); g.add(head);
         for(const sx of [-.42,.42]){
             for(const sz of [-.62,.62]){
-                const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.13,.55,5,8),mat);
-                leg.position.set(sx,.38,sz*.65);
-                g.add(leg);
+                const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.12,.62,5,8),dark);
+                leg.position.set(sx,.4,sz*.7); g.add(leg);
             }
         }
-        const eyeMat=makeEntityMaterial(0xff3333,0xff0000,5);
+        const hEye=makeEntityMaterial(0xff4b35,0xff0000,6);
         for(const sx of [-.18,.18]){
-            const eye=new THREE.Mesh(new THREE.SphereGeometry(.07,8,8),eyeMat);
-            eye.position.set(sx,1.17,-1.38);
-            g.add(eye);
+            const eye=new THREE.Mesh(new THREE.SphereGeometry(.06,8,8),hEye);
+            eye.position.set(sx,1.17,-1.56); g.add(eye);
         }
     }
 
     g.position.set(x,0,z);
+    g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; }});
     scene.add(g);
     horrorEntities.push(g);
     return g;
 }
 
-createHorrorEntity("stalker",-10,-25);
-createHorrorEntity("smiler",35,0);
-createHorrorEntity("hound",10,25);
+// Multiple spawn points create the feeling that the entities are part of the level.
+createHorrorEntity("stalker", -10, -25);
+createHorrorEntity("stalker", 48, -28);
+createHorrorEntity("stalker", -48, -5);
+createHorrorEntity("smiler", 35, 0);
+createHorrorEntity("smiler", -30, 30);
+createHorrorEntity("hound", 10, 25);
+createHorrorEntity("hound", 48, 25);
 
 function distance2D(a,b){
     const dx=a.x-b.x, dz=a.z-b.z;
@@ -4925,7 +4986,7 @@ function updateExtraEntities(delta){
             if(active){
                 smilerVisibleTimer+=delta;
                 entity.position.y=Math.sin(entity.userData.phase*1.8)*.04;
-                if(d<8 && entityFacingPlayer(entity) && smilerVisibleTimer>1.2){
+                if(d<10 && entityFacingPlayer(entity) && smilerVisibleTimer>1.0){
                     triggerJumpscare("smiler");
                     smilerVisibleTimer=0;
                 }
@@ -4936,7 +4997,7 @@ function updateExtraEntities(delta){
         }
 
         if(kind==="stalker"){
-            const seen=hasLineOfSight(entity.position,player) && d<34;
+            const seen=hasLineOfSight(entity.position,player) && d<48;
             if(seen || d<10){
                 entity.userData.state="chase";
                 entity.userData.lastSeen=2.5;
@@ -5022,16 +5083,16 @@ function updateExtraEntities(delta){
     }
 
     // Low sanity makes the world feel less trustworthy.
-    scene.fog.density=.017 + (100-sanity)*.000035;
+    scene.fog.density=.0105 + (100-sanity)*.000025;
 }
 
 function updateHorrorEvents(delta){
     // subtle screen breathing at very low sanity
     if(!gameEnded && sanity<18){
-        camera.fov=76+Math.sin(performance.now()*.002)*1.8;
+        camera.fov=78+Math.sin(performance.now()*.002)*1.8;
         camera.updateProjectionMatrix();
-    }else if(camera.fov!==76){
-        camera.fov=76;
+    }else if(camera.fov!==78){
+        camera.fov=78;
         camera.updateProjectionMatrix();
     }
 }
